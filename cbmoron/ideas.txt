@@ -1,0 +1,33 @@
+En el dashboard poner opcion para buscar un jugador similar al seleccionado (matriz similaridad)
+
+Scrapear stats de cada jugador solo 1 una vez ya que su id aparecera varias veces en varios equipos distintos
+
+Hacer foto en canva para explicar como clasifico entre triple, media distancia y zona.
+
+Añadir posicion en la base de datos una vez esten scrapeados los jugadores (los missing usar ML)
+
+En el dashboard al seleccionar un jugador para que salgan sus stats, meter un dibujo con los % de tiro segun la posicion 
+(¿colores?)
+
+Scrapear cada equipo con el id_team y ver que plantilla tenia en ese año (baloncestoenvivo.feb.es/equipo/{id_team})
+
+Para ver la evolucion del jugador usar ML para determinar que stats son normales para los minutos jugados y usar eso para predecir
+que stats deberia haber sacado y compararlas con las realmente sacadas
+Ejemplo: con 29min de media de juego en la liga normalmente se sacan 10p , 5as y 2reb (para los bases/alero/pivot),
+        y en este caso el jugador jugando 29min de media ha conseguido 5p,2as y 1 reb por lo que no ha rendido segun lo esperado.
+Este rendimiento probablemente no sea lineal si no algoritmico ya que 1min no es equivalente a 1/10 de 10 minutos ya que el
+minuto puede ser tiempo de juego "basura".
+
+Ver la equivalencia de estadisticas de una liga a otra, es decir, si un jugador en EBA hace 15p, sera capaz de hacer en LEB PLATA
+8p porque los defensores son mejores (determinar esto con ML)
+
+Añadir grafico de evolucion del jugador con el paso de los años en puntos (o la stat que se elija en un dropdown)
+Poder comparar entre varios jugadores su evolucion en el mismo grafico. (tener en cuenta la liga en la que jugaron ya que no se 
+puedo comparar stats de EBA con stats de LEB ORO)
+
+Añadir opcion de hacer un report automatico en pdf con todos los datos de un determinador jugador o de la comparacion de dos 
+jugadores.
+
+
+Scrapear entradas y salidas de jugadores al campo y asignar que jugador esta defendiendo a quien y cuantos puntos mete en 
+ese tiempo vs cuantos puntos mete su par

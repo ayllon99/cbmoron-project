@@ -1,0 +1,17 @@
+from fuzzywuzzy import fuzz, process
+
+def fuzzy_search(my_list, target, threshold=60):
+    results = []
+    for item in my_list:
+        ratio = fuzz.ratio(target, item)
+        if ratio >= threshold:
+            results.append((item, ratio))
+    return results
+
+my_list = ["apple", "banana", "cherry", "date", "elderberry"]
+target = "chery"
+threshold = 60  # 60% similarity threshold
+
+results = fuzzy_search(my_list, target, threshold)
+for result in results:
+    print(f"Found {result[0]} with similarity {result[1]}")
