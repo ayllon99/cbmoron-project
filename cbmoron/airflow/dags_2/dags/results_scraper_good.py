@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 from seleniumwire import webdriver
 from datetime import datetime
 
-
+postgres_connection='cbmoron_dev'
 
 
 def matchday_scraper(soup,stage_id,category):
@@ -74,19 +74,21 @@ def getting_sql_query(ti,a):
     placeholders = ', '.join(['%s'] * len(df.columns))
     value_lists = [tuple(row) for row in df.values]
     query = f"""
-        INSERT INTO 'results' ({columns_sql}) 
+        INSERT INTO results ({columns_sql}) 
         VALUES {', '.join(['(' + placeholders + ')' for _ in range(len(value_lists))])
     }"""
     return query, [item for sublist in value_lists for item in sublist]
 
 
-def inserting_to_postgres(ti,aa):
+def inserting_to_postgres(ti):
+    global postgres_connection
+    aa=ti.xcom_pull(task_ids='evaluate_matchdays',key='aa')
     for a in aa:
         query, params=getting_sql_query(ti,a=a)
         print(query, params)
         SQLExecuteQueryOperator(
                 task_id="upload_to_postgres",
-                conn_id="cbmoron_postgres",
+                conn_id=postgres_connection,
                 sql=query,
                 parameters=params,
                 autocommit=True,
@@ -113,7 +115,11 @@ def results_scraper(ti):
 
         url='https://baloncestoenvivo.feb.es/resultados/primerafeb/1/2024'
         driver.get(url)
-        aa=ti.xcom_pull(task_ids='evaluate_and_trigger',key='aa')
+        print(ti)
+        aa=ti.xcom_pull(task_ids='evaluate_matchdays',key='aa') 
+       
+        print(aa)
+
         for a in aa:
                 driver.find_element(By.XPATH,f'/html/body/form/div[4]/div[2]/div[3]/select[3]/option[{a}]').click()
                 time.sleep(3)
