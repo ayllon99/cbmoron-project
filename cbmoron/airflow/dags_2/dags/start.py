@@ -17,6 +17,7 @@ with DAG(
     dag_id="check_if_new_results",
     schedule_interval="@daily",
     catchup=False,
+    description='Primera_feb',
     default_args={
         "owner": "airflow",
         "depends_on_past": False,
