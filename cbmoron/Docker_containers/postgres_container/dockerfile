@@ -1,2 +1,3 @@
-FROM postgres
-COPY /back_up_02_11_2024.sql /opt/backupss.sql
+FROM  dpage/pgadmin4:latest
+COPY /back_up.sql /var/lib/pgadmin/storage/admin_admin.com
+COPY /triggers.sql /var/lib/pgadmin/storage/admin_admin.com
