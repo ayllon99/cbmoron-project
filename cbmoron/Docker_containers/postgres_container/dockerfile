@@ -1,0 +1,2 @@
+FROM postgres
+COPY /back_up_02_11_2024.sql /opt/backupss.sql

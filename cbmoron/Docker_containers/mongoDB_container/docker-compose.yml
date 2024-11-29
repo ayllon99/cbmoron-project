@@ -1,0 +1,33 @@
+version: "3.8"
+services:
+  mongo-server:
+    container_name: mongo-server
+    image: mongo:latest
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data_volume:/data/db
+    networks:
+      - docker_postgres_default
+  mongo-client:
+    container_name: mongo-client
+    image: mongo-express:latest
+    restart: always
+    depends_on:
+      - mongo-server
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: root
+      ME_CONFIG_MONGODB_URL: mongodb://root:root@mongo-server:27017/
+      ME_CONFIG_BASICAUTH: false
+      
+    ports:
+      - "8081:8081"
+    networks:
+      - docker_postgres_default
+volumes:
+  mongodb_data_volume:
+networks:
+  docker_postgres_default:
+    external: true
