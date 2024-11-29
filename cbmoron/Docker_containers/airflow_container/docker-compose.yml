@@ -3,14 +3,14 @@ services:
     container_name: airflow-container
     image: airflow-image
     volumes:
-      - ./airflow_folder:/opt/airflow
+      - ./airflow:/opt/airflow
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
       - "8080:8080"
     command: airflow standalone
     networks:
-      - docker_postgres_default
+      - principal_network
 networks:
-  docker_postgres_default:
+  principal_network:
     external: true

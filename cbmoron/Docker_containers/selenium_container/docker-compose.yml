@@ -15,7 +15,7 @@ services:
     extra_hosts:
       - "host:172.19.0.1"
     networks:
-      - docker_postgres_default
+      - principal_network
   chrome:
     container_name: chrome-node
     image: selenium/node-chrome:latest
@@ -29,7 +29,7 @@ services:
       - SE_NODE_MAX_SESSIONS=10
       - VNC_PASSWORD=root
     networks:
-      - docker_postgres_default
+      - principal_network
     extra_hosts:
       - "host:172.19.0.1"
   selenium-hub:
@@ -42,9 +42,9 @@ services:
       - "4443:4443"
       - "4444:4444"
     networks:
-      - docker_postgres_default
+      - principal_network
 networks:
-  docker_postgres_default:
+  principal_network:
     external: true
     
 
