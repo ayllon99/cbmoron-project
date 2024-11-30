@@ -1,0 +1,2 @@
+*.log
+/cbmoron/Docker_containers/airflow_container/airflow/logs
