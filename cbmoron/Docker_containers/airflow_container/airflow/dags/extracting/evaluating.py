@@ -74,7 +74,7 @@ def refresh_dates(driver,new_detected,dates_left,url,file_path):
         time.sleep(2)
         matchdays_list=bs(driver.page_source,'lxml').find('select',{'name':'_ctl0:MainContentPlaceHolderMaster:jornadasDropDownList'}).find_all('option')
         dates_left[stage_id]={matchday.text.split('(')[0]:matchday.text.split('(')[1].replace(')','') for matchday in matchdays_list}
-    driver.quit()
+    
 
     with open(file_path,'w') as file:
             json.dump(dates_left,file)

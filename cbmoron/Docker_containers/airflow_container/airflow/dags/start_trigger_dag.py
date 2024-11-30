@@ -103,7 +103,7 @@ with DAG(
         trigger_dag_id="new_matchday_dag_tercera_FEB",
     )
 
-
+    evaluate_and_trigger_primera >> evaluate_and_trigger_segunda >>evaluate_and_trigger_tercera
     evaluate_and_trigger_primera >> should_trigger_primera >>trigger_dag_new_matchday_primera
     evaluate_and_trigger_segunda >> should_trigger_segunda >>trigger_dag_new_matchday_segunda
     evaluate_and_trigger_tercera >> should_trigger_tercera >>trigger_dag_new_matchday_tercera

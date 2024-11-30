@@ -98,7 +98,7 @@ with DAG(
 
     trigger_dag_new_player_in_database = TriggerDagRunOperator(
             task_id="trigger_dag_new_player_in_database",
-            trigger_dag_id="new_player_in_database",
+            trigger_dag_id="new_player_stage_team_in_database",
         )
         
 

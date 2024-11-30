@@ -62,6 +62,6 @@ $$ LANGUAGE plpgsql;
 
 -- Create the trigger
 CREATE TRIGGER check_and_insert_player_id_trigger
-BEFORE INSERT ON results
+BEFORE INSERT ON players_matches_stats
 FOR EACH ROW
 EXECUTE FUNCTION check_and_insert_player_id();

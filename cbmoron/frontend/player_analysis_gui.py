@@ -8,9 +8,9 @@ from matplotlib.patches import Circle, Rectangle, Arc, Wedge
 ############################3
 from dotenv import load_dotenv
 import os
-from scraping_phase.pipeline import PostgreSQLConnection,DataPipeline
+
 import io
-import analysis_phase.analysis as analysis
+import global_analysis_gui as analysis
 from datetime import datetime
 
 

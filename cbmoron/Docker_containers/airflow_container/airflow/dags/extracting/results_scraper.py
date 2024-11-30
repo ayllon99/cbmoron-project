@@ -140,7 +140,7 @@ def results_scraper(ti,**op_kwargs):
                 for match_day in match_days:
                         driver.find_element(By.XPATH,f'/html/body/form/div[4]/div[2]/div[3]/select[3]/option[{match_day}]').click()
                         time.sleep(3)
-                        soup=bs(driver.page_source)
+                        soup=bs(driver.page_source,'lxml')
                         
 
                         results,match_links=matchday_scraper(soup,stage_id,category)

@@ -8,7 +8,7 @@ from matplotlib.patches import Circle, Rectangle, Arc, Wedge
 ############################3
 from dotenv import load_dotenv
 import os
-from scraping_phase.pipeline import PostgreSQLConnection,DataPipeline
+
 import pandas as pd
 import io
 

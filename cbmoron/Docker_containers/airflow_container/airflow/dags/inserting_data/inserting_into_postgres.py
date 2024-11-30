@@ -3,14 +3,19 @@ from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 
 def getting_sql_query(ti,table,match_id):
     df=ti.xcom_pull(task_ids='scraping_match_info',key=f'{match_id}_{table}')
-    columns_sql = ', '.join([f'"{col}"' for col in df.columns])
-    placeholders = ', '.join(['%s'] * len(df.columns))
-    value_lists = [tuple(row) for row in df.values]
-    query = f"""
-        INSERT INTO {table} ({columns_sql}) 
-        VALUES {', '.join(['(' + placeholders + ')' for _ in range(len(value_lists))])
-    }"""
-    return query, [item for sublist in value_lists for item in sublist]
+    try:
+        columns_sql = ', '.join([f'"{col}"' for col in df.columns])
+        placeholders = ', '.join(['%s'] * len(df.columns))
+        value_lists = [tuple(row) for row in df.values]
+        query = f"""
+            INSERT INTO {table} ({columns_sql}) 
+            VALUES {', '.join(['(' + placeholders + ')' for _ in range(len(value_lists))])
+        }"""
+        params=[item for sublist in value_lists for item in sublist]
+    except:
+        query=f'SELECT * FROM {table} LIMIT %s;'
+        params=['1']
+    return query, params
 
 
 def teams_match_stats_insert_data(ti,**op_kwargs):

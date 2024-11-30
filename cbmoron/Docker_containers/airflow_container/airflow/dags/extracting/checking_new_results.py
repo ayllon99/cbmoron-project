@@ -53,9 +53,7 @@ def open_browser():
     return driver
 
 
-def check_new_stages(dates_left,url):
-    driver=open_browser()
-    
+def check_new_stages(driver,dates_left,url):
     driver.get(url)
     time.sleep(3)
     try:
@@ -68,7 +66,7 @@ def check_new_stages(dates_left,url):
         new_stages_ids.append(new_stage.get('value'))
     new_detected=[stage_id for stage_id in new_stages_ids if stage_id not in actual_stages]
     detected=True if len(new_detected)>0 else False
-    driver.quit()
+    
     return detected,new_detected
 
 
@@ -76,6 +74,7 @@ def check_new_stages(dates_left,url):
 def new_results(ti,**op_kwargs):
     url=op_kwargs['url']
     file_path=op_kwargs['file_path']
+    driver=open_browser()
     #file_path='my_airflow_pipeline/airflow_folder/dags/segunda_feb/dates_segunda.txt'
     with open(file_path,'r') as file:
         a=file.read()
@@ -85,7 +84,7 @@ def new_results(ti,**op_kwargs):
         else:
             dates_left={}
 
-    detected,new_detected=check_new_stages(dates_left,url)
+    detected,new_detected=check_new_stages(driver,dates_left,url)
     if detected:
         ti.xcom_push(key='trigger_evaluator_segunda',value=True)
         print('NEW STAGE to scrape found!')
@@ -104,7 +103,7 @@ def new_results(ti,**op_kwargs):
         
     
     if len([value for key, sublist in dates_to_scrape_dict.items() for value in sublist])>1:
-        driver=open_browser()
+        
         time.sleep(1)
         
         driver.get(url)
@@ -131,10 +130,9 @@ def new_results(ti,**op_kwargs):
                         ti.xcom_push(key='trigger_evaluator',value=True)
                         driver.quit()
                         return True
-
-        driver.quit()
-        ti.xcom_push(key='trigger_evaluator',value=False)
-        return False
+    ti.xcom_push(key='trigger_evaluator',value=False)
+    driver.quit()
+    return False
             
 
 
