@@ -23,7 +23,7 @@ services:
       PGADMIN_DEFAULT_PASSWORD: root
     volumes:
       - ./sql_files:/var/lib/pgadmin/storage/admin_admin.com
-      - pgadmin_volume:/var
+      - pgadmin_volume:/var/lib/pgadmin
     ports:
       - "5050:80"
     depends_on:
