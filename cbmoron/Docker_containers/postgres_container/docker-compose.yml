@@ -14,6 +14,7 @@ services:
       - postgres_database_volume:/var/lib/postgresql/data
     networks:
       - principal_network
+
   pgadmin4_container:
     container_name: pgadmin4_container
     image: pgadmin-image
@@ -30,10 +31,11 @@ services:
       - postgres_container
     networks:
       - principal_network
+
 volumes:
   postgres_database_volume:
   pgadmin_volume:
-
+  
 networks:
   principal_network:
     name: principal_network

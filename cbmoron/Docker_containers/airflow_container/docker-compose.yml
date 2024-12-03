@@ -11,6 +11,7 @@ services:
     command: airflow standalone
     networks:
       - principal_network
+
 networks:
   principal_network:
     external: true

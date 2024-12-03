@@ -7,16 +7,15 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import Circle, Rectangle, Arc, Wedge
 import io
 from datetime import datetime
-from PIL import Image
-import matplotlib.image as mpimg
+#from PIL import Image
+#import matplotlib.image as mpimg
 import psycopg2
 
 
 def draw_court(color="black", lw=1, outer_lines=True, dic_stats=None ,year=None):
-    """if ax is None:
-        ax = plt.gca()"""
+    
     fig, ax = plt.subplots()
-    if year!=2020:
+    if year!=2026:
         # Basketball Hoop
         hoop = Circle((0,0), radius=7.5, linewidth=lw, color=color, fill=False)
         # Backboard
@@ -61,30 +60,54 @@ def draw_court(color="black", lw=1, outer_lines=True, dic_stats=None ,year=None)
         for element in court_elements:
             ax.add_patch(element)
 
-        """right_corner_three=dic_stats['right_corner_three']['in']        #CALCULAR IN / OUT Y PORCENTAJE Y AÑADIRLO A LA IMAGEN
-        right_corner_middle=dic_stats['right_corner_middle']['in']
-        right_side_three=dic_stats['right_side_three']['in']
-        right_side_middle=dic_stats['right_side_middle']['in']
-        front_three=dic_stats['front_three']['in']
-        front_middle=dic_stats['front_middle']['in']
-        left_side_three=dic_stats['left_side_three']['in']
-        left_side_middle=dic_stats['left_side_middle']['in']
-        left_corner_three=dic_stats['left_corner_three']['in']
-        left_corner_middle=dic_stats['left_corner_middle']['in']
-        zone=dic_stats['Zone']['in']"""
 
-        #######Delete####
-        right_corner_three='20%'
-        right_corner_middle='20%'
-        right_side_three='20%'
-        right_side_middle='20%'
-        front_three='20%'
-        front_middle='20%'
-        left_side_three='20%'
-        left_side_middle='20%'
-        left_corner_three='20%'
-        left_corner_middle='20%'
-        zone='20%'
+        
+        
+        try:
+            right_corner_three=f'{round(dic_stats[year]['Right Corner Three']['in']/dic_stats[year]['Right Corner Three']['tried'],2)*100}%'
+        except:
+            right_corner_three=0
+        try:
+            right_corner_middle=f'{round(dic_stats[year]['Right Corner Middle']['in']/dic_stats[year]['Right Corner Middle']['tried'],2)*100}%'
+        except:
+            right_corner_middle=0
+        try:
+            right_side_three=f'{round(dic_stats[year]['Right Side Three']['in']/dic_stats[year]['Right Side Three']['tried'],2)*100}%'
+        except:
+            right_side_three=0
+        try:
+            right_side_middle=f'{round(dic_stats[year]['Right Side Middle']['in']/dic_stats[year]['Right Side Middle']['tried'],2)*100}%'
+        except:
+            right_side_middle=0
+        try:
+            front_three=f'{round(dic_stats[year]['Front Three']['in']/dic_stats[year]['Front Three']['tried'],2)*100}%'
+        except:
+            front_three=0
+        try:
+            front_middle=f'{round(dic_stats[year]['Front Middle']['in']/dic_stats[year]['Front Middle']['tried'],2)*100}%'
+        except:
+            front_middle=0
+        try:
+            left_side_three=f'{round(dic_stats[year]['Left Side Three']['in']/dic_stats[year]['Left Side Three']['tried'],2)*100}%'
+        except:
+            left_side_three=0
+        try:
+            left_side_middle=f'{round(dic_stats[year]['Left Side Middle']['in']/dic_stats[year]['Left Side Middle']['tried'],2)*100}%'
+        except:
+            left_side_middle=0
+        try:
+            left_corner_three=f'{round(dic_stats[year]['Left Corner Three']['in']/dic_stats[year]['Left Corner Three']['tried'],2)*100}%'
+        except:
+            left_corner_three=0
+        try:
+            left_corner_middle=f'{round(dic_stats[year]['Left Corner Middle']['in']/dic_stats[year]['Left Corner Middle']['tried'],2)*100}%'
+        except:
+            left_corner_middle=0
+        try:
+            zone=f'{round(dic_stats[year]['Zone']['in']/dic_stats[year]['Zone']['tried'],2)*100}%'
+        except:
+            zone=0
+        
         ################################
 
         ax.text(0, 185, front_middle, ha="center", va="center", fontsize=10)    #AÑADIR AQUI EL IN / OUT
@@ -107,18 +130,10 @@ def draw_court(color="black", lw=1, outer_lines=True, dic_stats=None ,year=None)
         ax.patch.set_facecolor('white')
         fig.patch.set_facecolor('none')
         ax.plot()
-        #plt.show()
+        plt.show()
     else:
-        img = mpimg.imread(r'cbmoron\frontend\data_not_found.png')
-        ax.imshow(img)
-        ax.set_title(f'Shootings stats in {year}',color='white')
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.patch.set_facecolor('white')
-        fig.patch.set_facecolor('none')
-        ax.plot()
+        pass
+        
     return fig
 
 
@@ -211,42 +226,3 @@ def getting_percentages(years,df):
 
 
 
-
-
-
-
-
-
-""" SQL CODE FOR SHOOTINGS STATS (DELETE TRIGGER FUNCTION)
-
-SELECT season,shooting_type,shoot_from, success,shoots,SUM(shoots) OVER (PARTITION BY season,shoot_from) AS total
-FROM(WITH stats AS(SELECT shooting_type,success,top_top,left_left,
-		CASE
-    		WHEN EXTRACT(MONTH FROM date) < 8 THEN EXTRACT(YEAR FROM date)-1
-    		WHEN EXTRACT(MONTH FROM date) >= 8 THEN EXTRACT(YEAR FROM date)
-		END AS season,date,
-        CASE 
-        	WHEN shooting_type = 'Zone' THEN 'Zone'
-        	WHEN shooting_type = 'Middle' AND top_top > 10 AND top_top < 38 AND left_left < 10 THEN 'Left Corner Middle'
-       		WHEN shooting_type = 'Middle' AND top_top > 62 AND top_top < 90 AND left_left < 10 THEN 'Right Corner Middle'
-        	WHEN shooting_type = 'Middle' AND top_top > 38 AND top_top < 62 THEN 'Front Middle'
-        	WHEN shooting_type = 'Middle' AND top_top < 50 THEN 'Left Side Middle'
-        	WHEN shooting_type = 'Middle' AND top_top > 50 THEN 'Right Side Middle'
-        	WHEN shooting_type = 'Three' AND top_top > 90 AND left_left < 10 THEN 'Right Corner Three'
-        	WHEN shooting_type = 'Three' AND top_top < 10 AND left_left > 90 THEN 'Left Corner Three'
-        	WHEN shooting_type = 'Three' AND top_top > 38 AND top_top < 62 THEN 'Front Three'
-        	WHEN shooting_type = 'Three' AND top_top < 50 THEN 'Left Side Three'
-        	WHEN shooting_type = 'Three' AND top_top > 50 THEN 'Right Side Three'
-    	END AS shoot_from
-FROM shootings
-LEFT JOIN results	
-ON shootings.match_id=results.match_id
-WHERE player_id = 2274861
-ORDER BY date)
-SELECT season,shooting_type,shoot_from,success,COUNT(*) AS shoots FROM stats
-GROUP BY season,shooting_type,shoot_from,success
-ORDER BY season, shooting_type,shoot_from)
-GROUP BY season,shooting_type,shoot_from,success,shoots
-ORDER BY season, shooting_type,shoot_from
-
-"""

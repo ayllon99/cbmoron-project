@@ -14,7 +14,7 @@ services:
       - VNC_PASSWORD=root
     extra_hosts:
       - "host:172.19.0.1"
-    networks:
+    networks: 
       - principal_network
   chrome:
     container_name: chrome-node
@@ -46,7 +46,3 @@ services:
 networks:
   principal_network:
     external: true
-    
-
-
-

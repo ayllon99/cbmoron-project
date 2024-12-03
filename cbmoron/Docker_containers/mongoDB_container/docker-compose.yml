@@ -30,7 +30,7 @@ services:
     networks:
       - principal_network
 volumes:
-  mongo_server_volume
+  mongo_server_volume:
 networks:
   principal_network:
     external: true

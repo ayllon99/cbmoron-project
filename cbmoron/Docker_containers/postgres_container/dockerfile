@@ -5,4 +5,4 @@ WORKDIR /var/lib/pgadmin/storage/admin_admin.com
 
 COPY /sql_files /var/lib/pgadmin/storage/admin_admin.com
 
-#USER pgadmin
+WORKDIR /pgadmin4
