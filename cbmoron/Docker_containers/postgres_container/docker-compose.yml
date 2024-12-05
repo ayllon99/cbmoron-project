@@ -34,7 +34,9 @@ services:
 
 volumes:
   postgres_database_volume:
+    name: postgres_database_volume
   pgadmin_volume:
+    name: pgadmin_volume
   
 networks:
   principal_network:
