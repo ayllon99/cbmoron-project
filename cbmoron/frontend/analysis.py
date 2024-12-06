@@ -283,9 +283,56 @@ class PlayerStats:
         self.close_connection()
         return dict_df
     
+    def path(self):
+        ###########################
+        self.connect()
+        params = [self.player_id,self.player_id]
+        self.cur.execute("""
+            WITH min_avg_table AS(
+                SELECT season,CONCAT(TRUNC(weighted,0),':',ROUND((MOD(weighted,1) *60::integer),0)) AS min_avg
+                FROM(
+                SELECT season,SUM(ROUND((SPLIT_PART(min_total, ':', 1)::integer + SPLIT_PART(min_total, ':', 2)::integer/60::numeric),2))/SUM(n_matches) AS weighted
+                FROM players_stats_career
+                WHERE player_id = 2274861
+                GROUP BY season))
+            
+            , pathh AS(
+                SELECT *,substring(team_name, position('[' in team_name) + 1, position(']' in team_name) - position('[' in team_name) - 1)AS path_team_name,
+                CASE
+                    WHEN LEFT(season, 2)::integer < 90  THEN ('20'|| LEFT(season, 2)) ::integer
+                    WHEN LEFT(season, 2)::integer >= 90  THEN ('19'|| LEFT(season, 2)) ::integer
+                    ELSE 1900
+                END AS years
+                FROM public.players_career_path
+                WHERE player_id = %s
+                ORDER BY years,date_in ASC)
 
-# Example usage:
+            SELECT pathh.identifier,pathh.player_id,pathh.season,pathh.league,pathh.team_id,pathh.team_name,pathh.license,pathh.date_in,pathh.date_out,pathh.years,matches_table.n_matches,matches_table.efficiency_avg,min_avg_table.min_avg
+            FROM(
+                SELECT season , team_name_extended, SUM(n_matches) AS n_matches, ROUND(SUM(efficiency_avg * n_matches)::numeric / SUM(n_matches)::numeric,2) AS efficiency_avg
+                FROM public.players_stats_career
+                WHERE player_id = %s
+                GROUP BY  team_name_extended,season
+                ORDER BY season) AS matches_table
+            LEFT JOIN pathh ON matches_table.team_name_extended  = pathh.path_team_name
+            LEFT JOIN min_avg_table ON matches_table.season = min_avg_table.season
+            
+            ORDER BY years DESC;
+        """, params)
+        df = pd.DataFrame(self.cur.fetchall())
+        
+        df.columns = ['identifier', 'player_id', 'season', 'league','team_id','team_name','license','date_in','date_out','years','n_matches','efficiency','min_avg']
+        df=df[['season', 'league','team_name','n_matches','efficiency','min_avg']]
+        df['n_matches']=df['n_matches'].apply(lambda x: int(x))
+        df['efficiency']=df['efficiency'].apply(lambda x: round(float(x),2))
+        df.columns = ['SEASON', 'LEAGUE','TEAM NAME','NUMBER OF MATCHES','EFFICIENCY','MINUTES PER MATCH']
+        self.close_connection()
+        return df
+    
+
+
 player_stats = PlayerStats(2274861)
 stats, years = player_stats.get_shooting_stats()
 player_info=player_stats.info_query()
-
+player_path=player_stats.path()
+#player_path.info()

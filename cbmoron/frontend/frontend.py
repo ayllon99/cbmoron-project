@@ -17,6 +17,10 @@ player_id=2274861
 player_stats = analysis.PlayerStats(player_id)
 stats, years = player_stats.get_shooting_stats()
 player_info=player_stats.info_query()
+player_path=player_stats.path()
+last_season=player_path.loc[0].SEASON
+last_league=player_path.loc[0].LEAGUE
+
 
 images=[]
 for year in years:
@@ -28,12 +32,8 @@ for year in years:
 
 
 
-
-
-
-
 with tgb.Page() as player_home:
-    tgb.text("Análisis de jugador",class_name="h1 text-center")
+    tgb.text("Player analysis",class_name="h1 text-center")
     with tgb.layout("1 1 1 1 1 1 1"):
         with tgb.part():
             tgb.text('.')
@@ -45,9 +45,9 @@ with tgb.Page() as player_home:
         with tgb.part():
             tgb.text('')
         with tgb.part():
-            tgb.input(value='', label='Nombre del jugador')
+            tgb.input(value='', label='Player name')
         with tgb.part():
-            tgb.button('Analizar',class_name="center")
+            tgb.button('Select',class_name="center")
     with tgb.layout("1 1 1 1 1 1 1"):
         with tgb.part():
             tgb.text('.')
@@ -59,10 +59,10 @@ with tgb.Page() as player_home:
             tgb.text(f'{player_info['age']} years old',class_name="h3 text-center")
         with tgb.part():
             tgb.text(f'Last season',class_name="h3 text-center")
-            tgb.text(f'Path info',class_name="h3 text-center")
+            tgb.text(last_season,class_name="h3 text-center")
         with tgb.part():
             tgb.text(f'Last league',class_name="h3 text-center")
-            tgb.text(f'{'Path info'}',class_name="h3 text-center")
+            tgb.text(last_league,class_name="h3 text-center")
         with tgb.part():
             tgb.text(f'Position',class_name="h3 text-center")
             tgb.text(f'{player_info['position']}',class_name="h3 text-center")
@@ -71,13 +71,14 @@ with tgb.Page() as player_home:
             tgb.text(f'{player_info['nationality']}',class_name="h3 text-center")
     
     tgb.text('--------------------------------------',class_name="h1 text-center")
-    #tgb.table("{path}")
+    tgb.text('PLAYER CAREER IN THE COUNTRY',class_name="h2 text-center")
+    tgb.table("{player_path}")
     with tgb.layout("1 1 1"):
         for i, image_buffer in enumerate(images):
             with tgb.part():
                 tgb.image(image_buffer.getvalue(), width=10, label='')
                 image_buffer.seek(0)  # Reset the buffer for the next iteration
-    #tgb.chart(figure="{fig_line_chart}",)
+    #tgb.chart(figure="{chart}",)
     #table=tgb.table("{player_career_stats}")
     #table.align = "center"
 
