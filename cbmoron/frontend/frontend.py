@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import taipy.gui.builder as tgb
+import taipy.gui.state as state
 from matplotlib import pyplot as plt
 from matplotlib.patches import Circle, Rectangle, Arc, Wedge
 import io
@@ -13,6 +14,7 @@ import matplotlib.image as mpimg
 import psycopg2
 #import cbmoron.frontend.analysis as analysis
 import analysis
+from fuzzywuzzy import fuzz
 
 
 player_id=2274861
@@ -41,11 +43,32 @@ df = pd.DataFrame({
 })
 
 
+def fuzzy_search(my_list, target, threshold=60):
+    results = []
+    for item in my_list:
+        ratio = fuzz.ratio(target, item)
+        if ratio >= threshold:
+            results.append((item, ratio))
+    return results
+
+my_list = ["apple", "banana", "cherry", "date", "elderberry"]
+target = "chery"
+threshold = 60  # 60% similarity threshold
+
+
+def name_scraper(state):
+    input=state.value
+    print(input)
+    results=fuzzy_search(my_list,input)
+    for result in results:
+        print(f"Found {result[0]} with similarity {result[1]}")
+
+
+value=None
 
 def create_fig(df,stat):
     fig = px.line(data_frame=df,x='years', y=stat)
     return fig
-
 
 
 stat=['points_per_game','assists_per_game','rebounds_per_game']
@@ -59,16 +82,65 @@ def on_selector(state):
     column=state.stat
     state.figg = create_fig(df,column)
 
+with tgb.Page() as root_page:
+    tgb.navbar(class_name='m-auto')
+
 
 with tgb.Page() as player_home:
-    
+    tgb.text(' ',mode='pre')
     tgb.text("Player analysis",class_name="h1 text-center")
     tgb.text(' ',mode='pre')
-    with tgb.layout(columns="1fr"):
-        with tgb.part(class_name='align-columns-center'):
-            tgb.input(value='', label='Player name')
-    """with tgb.part():
-        tgb.button('Select',class_name="center")"""
+    with tgb.layout(1):
+        with tgb.layout(class_name='d-inline-block m-auto'):
+            with tgb.part(class_name='d-inline-block m-auto d-flex justify-content-center'):
+                tgb.input('{value}',type='search',properties={'args':my_list},label='Player name',class_name='d-inline',on_change=name_scraper,change_delay=10)
+            with tgb.part(class_name='d-inline-block m-auto d-flex justify-content-center'):
+                tgb.button('Select')
+    tgb.text(' ',mode='pre')
+    tgb.text(player_info['player_name'],class_name="h2 text-center text-underline")
+    tgb.text(' ',mode='pre')
+    with tgb.layout("1 1 1 1 1"):
+        with tgb.part():
+            tgb.text(f'Age',class_name="h3 text-center")
+            tgb.text(f'{player_info['age']} years old',class_name="h3 text-center")
+        with tgb.part():
+            tgb.text(f'Last season',class_name="h3 text-center")
+            tgb.text(last_season,class_name="h3 text-center")
+        with tgb.part():
+            tgb.text(f'Last league',class_name="h3 text-center")
+            tgb.text(last_league,class_name="h3 text-center")
+        with tgb.part():
+            tgb.text(f'Position',class_name="h3 text-center")
+            tgb.text(f'{player_info['position']}',class_name="h3 text-center")
+        with tgb.part():
+            tgb.text(f'Nationality',class_name="h3 text-center")
+            tgb.text(f'{player_info['nationality']}',class_name="h3 text-center")
+    
+    tgb.text(' ',mode='pre')
+    tgb.text('PLAYER CAREER IN THE COUNTRY',class_name="h2 text-center")
+    tgb.table("{player_path}")
+    with tgb.layout("1 1 1"):
+        for i, image_buffer in enumerate(images):
+            with tgb.part():
+                tgb.image(image_buffer.getvalue(), width=10, label='')
+                image_buffer.seek(0)
+    with tgb.layout("1 225px"):
+        tgb.chart(figure="{figg}")
+        tgb.selector(value='{stat}',lov=['points_per_game','assists_per_game','rebounds_per_game'],
+                    dropdown=False,
+                    multiple=False,
+                    mode='radio',
+                    label="Select stat",
+                    class_name="fullwidth",
+                    on_change=on_selector)
+    tgb.text(' ',mode='pre')
+    tgb.table("{df}")
+    #table=tgb.table("{player_career_stats}")
+    #table.align = "center"
+
+with tgb.Page() as second:
+    
+    tgb.text("Player analysis",class_name="h1 text-center")
     tgb.text(' ',mode='pre')
     tgb.text(player_info['player_name'],class_name="h2 text-center")
     tgb.text('--------------------------------------',class_name="h1 text-center")
@@ -80,9 +152,9 @@ with tgb.Page() as player_home:
         with tgb.part():
             tgb.text('')
         with tgb.part():
-            tgb.input(value='', label='Player name',)
+            tgb.input(value='', label='Player name',class_name='align-columns-center')
         with tgb.part():
-            tgb.button('Select',class_name="center")
+            tgb.button('Select',class_name='align-columns-center')
     tgb.text(' ',mode='pre')
     tgb.text(player_info['player_name'],class_name="h2 text-center")
     tgb.text('--------------------------------------',class_name="h1 text-center")
@@ -119,10 +191,12 @@ with tgb.Page() as player_home:
                  on_change=on_selector)
     tgb.chart(figure="{figg}")
     tgb.table("{df}")
-    #table=tgb.table("{player_career_stats}")
-    #table.align = "center"
 
+pages = {
+    "/": root_page,
+    "home": player_home,
+    "about":second
+}
 
-
-gui = Gui(player_home)
+gui = Gui(pages=pages)
 gui.run(title='Player analysis',port=2425)
