@@ -187,10 +187,6 @@ def draw_court(color="black", lw=1, outer_lines=True, dic_stats=None ,year=None)
     return fig
 
 
-
-
-
-
 class PlayerStats:
     def __init__(self, player_id):
         self.player_id = player_id
@@ -329,10 +325,151 @@ class PlayerStats:
         self.close_connection()
         return df
     
+    def stats_total_table(self):
+        self.connect()
+        params = [self.player_id]
+        self.cur.execute("""
+            SELECT season,
+                MIN(team_name_extended) AS team_name_extended,
+                MIN(stage_name_extended) AS stage_name_extended,
+                SUM(n_matches) AS n_matches,
+                MIN(min_total) AS min_total,
+                SUM(points_total) AS points_total ,
+                SUM(twos_in_total) AS twos_in_total,
+                SUM(twos_tried_total) AS twos_tried_total,
+                SUM(twos_in_total)/SUM(twos_tried_total) AS twos_perc,
+                SUM(threes_in_total) AS threes_in_total,
+                SUM(threes_tried_total) AS threes_tried_total,
+                SUM(threes_in_total)/SUM(threes_tried_total) AS threes_perc,
+                SUM(field_goals_in_total) AS field_goals_in_total,
+                SUM(field_goals_tried_total) AS field_goals_tried_total,
+                SUM(field_goals_in_total)/SUM(field_goals_tried_total) AS field_goals_perc,
+                SUM(free_throws_in_total) AS free_throws_in_total,
+                SUM(free_throws_tried_total) AS free_throws_tried_total,
+                SUM(free_throws_in_total)/SUM(free_throws_tried_total) AS free_throws_perc,
+                SUM(offensive_rebounds_total) AS offensive_rebounds_total,
+                SUM(deffensive_rebounds_total) AS deffensive_rebounds_total,
+                SUM(total_rebounds_total) AS total_rebounds_total,
+                SUM(assists_total) AS assists_total,
+                SUM(turnovers_total) AS turnovers_total,
+                SUM(blocks_favor_total) AS blocks_favor_total,
+                SUM(blocks_against_total) AS blocks_against_total,
+                SUM(dunks_total)AS dunks_total,
+                SUM(personal_fouls_total) AS personal_fouls_total,
+                SUM(fouls_received_total) AS fouls_received_total,
+                SUM(efficiency_total) AS efficiency_total  
+            FROM players_stats_career
+            WHERE player_id = %s
+            GROUP BY season
+            ORDER BY season DESC
+        """,params)
+
+        df = pd.DataFrame(self.cur.fetchall())
+        df.columns=['season','team_name_extended','stage_name_extended','n_matches','min_total','points_total','twos_in_total','twos_tried_total','twos_perc','threes_in_total','threes_tried_total','threes_perc','field_goals_in_total','field_goals_tried_total','field_goals_perc','free_throws_in_total','free_throws_tried_total','free_throws_perc','offensive_rebounds_total','deffensive_rebounds_total','total_rebounds_total','assists_total','turnovers_total','blocks_favor_total','blocks_against_total','dunks_total','personal_fouls_total','fouls_received_total','efficiency_total']
+        df['n_matches']=df['n_matches'].apply(lambda x: int(x))
+        df['points_total']=df['points_total'].apply(lambda x: int(x))
+        df['twos_in_total']=df['twos_in_total'].apply(lambda x: int(x))
+        df['twos_tried_total']=df['twos_tried_total'].apply(lambda x: int(x))
+        df['twos_perc']=df['twos_perc'].apply(lambda x: round(float(x),2))
+        df['threes_in_total']=df['threes_in_total'].apply(lambda x: int(x))
+        df['threes_tried_total']=df['threes_tried_total'].apply(lambda x: int(x))
+        df['threes_perc']=df['threes_perc'].apply(lambda x: round(float(x),2))
+        df['field_goals_in_total']=df['field_goals_in_total'].apply(lambda x: int(x))
+        df['field_goals_tried_total']=df['field_goals_tried_total'].apply(lambda x: int(x))
+        df['field_goals_perc']=df['field_goals_perc'].apply(lambda x: round(float(x),2))
+        df['free_throws_in_total']=df['free_throws_in_total'].apply(lambda x: int(x))
+        df['free_throws_tried_total']=df['free_throws_tried_total'].apply(lambda x: int(x))
+        df['free_throws_perc']=df['free_throws_perc'].apply(lambda x: round(float(x),2))
+        df['offensive_rebounds_total']=df['offensive_rebounds_total'].apply(lambda x: int(x))
+        df['deffensive_rebounds_total']=df['deffensive_rebounds_total'].apply(lambda x: int(x))
+        df['total_rebounds_total']=df['total_rebounds_total'].apply(lambda x: int(x))
+        df['assists_total']=df['assists_total'].apply(lambda x: int(x))
+        df['turnovers_total']=df['turnovers_total'].apply(lambda x: int(x))
+        df['blocks_favor_total']=df['blocks_favor_total'].apply(lambda x: int(x))
+        df['blocks_against_total']=df['blocks_against_total'].apply(lambda x: int(x))
+        df['dunks_total']=df['dunks_total'].apply(lambda x: int(x))
+        df['personal_fouls_total']=df['personal_fouls_total'].apply(lambda x: int(x))
+        df['fouls_received_total']=df['fouls_received_total'].apply(lambda x: int(x))
+        df['efficiency_total']=df['efficiency_total'].apply(lambda x: int(x))
+        df.columns=['SEASON', 'TEAM_NAME_EXTENDED', 'STAGE_NAME_EXTENDED', 'N_MATCHES', 'MIN', 'POINTS', 'TWOS_IN', 'TWOS_TRIED', 'TWOS_PERC', 'THREES_IN', 'THREES_TRIED', 'THREES_PERC', 'FIELD_GOALS_IN', 'FIELD_GOALS_TRIED', 'FIELD_GOALS_PERC', 'FREE_THROWS_IN', 'FREE_THROWS_TRIED', 'FREE_THROWS_PERC', 'OFFENSIVE_REBOUNDS', 'DEFFENSIVE_REBOUNDS', 'TOTAL_REBOUNDS', 'ASSISTS', 'TURNOVERS', 'BLOCKS_FAVOR', 'BLOCKS_AGAINST', 'DUNKS', 'PERSONAL_FOULS', 'FOULS_RECEIVED', 'EFFICIENCY']
+
+        return df
+
+    def stats_avg_table(self):
+        self.connect()
+        params = [self.player_id]
+        self.cur.execute("""
+            SELECT season,
+                MIN(team_name_extended) AS team_name_extended,
+                MIN(stage_name_extended) AS stage_name_extended,
+                SUM(n_matches) AS n_matches,
+                DATE_TRUNC('second', '00:00:00' + (SUM(EXTRACT(EPOCH FROM min_avg) * n_matches) / SUM(n_matches)) * INTERVAL '1 second') AS min_avg,
+                SUM(points_avg*n_matches)/SUM(n_matches) AS points_avg,
+                SUM(twos_in_avg*n_matches)/SUM(n_matches) AS twos_in_avg,
+                SUM(twos_tried_avg*n_matches)/SUM(n_matches) AS twos_tried_avg,
+                SUM(twos_perc*n_matches)/SUM(n_matches) AS twos_perc,
+                SUM(threes_in_avg*n_matches)/SUM(n_matches) AS threes_in_avg,
+                SUM(threes_tried_avg*n_matches)/SUM(n_matches) AS threes_tried_avg,
+                SUM(threes_perc*n_matches)/SUM(n_matches) AS threes_perc,
+                SUM(field_goals_in_avg*n_matches)/SUM(n_matches) AS field_goals_in_avg,
+                SUM(field_goals_tried_avg*n_matches)/SUM(n_matches) AS field_goals_tried_avg,
+                SUM(field_goals_perc*n_matches)/SUM(n_matches) AS field_goals_perc,
+                SUM(free_throws_in_avg*n_matches)/SUM(n_matches) AS free_throws_in_avg,
+                SUM(free_throws_tried_avg*n_matches)/SUM(n_matches) AS free_throws_tried_avg,
+                SUM(free_throws_perc*n_matches)/SUM(n_matches) AS free_throws_perc,
+                SUM(offensive_rebounds_avg*n_matches)/SUM(n_matches) AS offensive_rebounds_avg,
+                SUM(deffensive_rebounds_avg*n_matches)/SUM(n_matches) AS deffensive_rebounds_avg,
+                SUM(total_rebounds_avg*n_matches)/SUM(n_matches) AS total_rebounds_avg,
+                SUM(assists_avg*n_matches)/SUM(n_matches) AS assists_avg,
+                SUM(turnovers_avg*n_matches)/SUM(n_matches) AS turnovers_avg,
+                SUM(blocks_favor_avg*n_matches)/SUM(n_matches) AS blocks_favor_avg,
+                SUM(blocks_against_avg*n_matches)/SUM(n_matches) AS blocks_against_avg,
+                SUM(dunks_avg*n_matches)/SUM(n_matches)AS dunks_avg,
+                SUM(personal_fouls_avg*n_matches)/SUM(n_matches) AS personal_fouls_avg,
+                SUM(fouls_received_avg*n_matches)/SUM(n_matches) AS fouls_received_avg,
+                SUM(efficiency_avg*n_matches)/SUM(n_matches) AS efficiency_avg
+            FROM players_stats_career
+            WHERE player_id = %s
+            GROUP BY season
+            ORDER BY season DESC
+        """,params)
+
+        df = pd.DataFrame(self.cur.fetchall())
+        df.columns=['season','team_name_extended','stage_name_extended','n_matches','min_avg','points_avg','twos_in_avg','twos_tried_avg','twos_perc','threes_in_avg','threes_tried_avg','threes_perc','field_goals_in_avg','field_goals_tried_avg','field_goals_perc','free_throws_in_avg','free_throws_tried_avg','free_throws_perc','offensive_rebounds_avg','deffensive_rebounds_avg','total_rebounds_avg','assists_avg','turnovers_avg','blocks_favor_avg','blocks_against_avg','dunks_avg','personal_fouls_avg','fouls_received_avg','efficiency_avg']
+        df['n_matches']=df['n_matches'].apply(lambda x: int(x))
+        df['min_avg']=df['min_avg'].apply(lambda x: (datetime(1900, 1, 1) + x).time().strftime("%M:%S"))
+        df['points_avg']=df['points_avg'].apply(lambda x: round(x,2))
+        df['twos_in_avg']=df['twos_in_avg'].apply(lambda x: round(x,2))
+        df['twos_tried_avg']=df['twos_tried_avg'].apply(lambda x: round(x,2))
+        df['twos_perc']=df['twos_perc'].apply(lambda x: round(float(x),2))
+        df['threes_in_avg']=df['threes_in_avg'].apply(lambda x: round(x,2))
+        df['threes_tried_avg']=df['threes_tried_avg'].apply(lambda x: round(x,2))
+        df['threes_perc']=df['threes_perc'].apply(lambda x: round(float(x),2))
+        df['field_goals_in_avg']=df['field_goals_in_avg'].apply(lambda x: round(x,2))
+        df['field_goals_tried_avg']=df['field_goals_tried_avg'].apply(lambda x: round(x,2))
+        df['field_goals_perc']=df['field_goals_perc'].apply(lambda x: round(float(x),2))
+        df['free_throws_in_avg']=df['free_throws_in_avg'].apply(lambda x: round(x,2))
+        df['free_throws_tried_avg']=df['free_throws_tried_avg'].apply(lambda x: round(x,2))
+        df['free_throws_perc']=df['free_throws_perc'].apply(lambda x: round(float(x),2))
+        df['offensive_rebounds_avg']=df['offensive_rebounds_avg'].apply(lambda x: round(x,2))
+        df['deffensive_rebounds_avg']=df['deffensive_rebounds_avg'].apply(lambda x: round(x,2))
+        df['total_rebounds_avg']=df['total_rebounds_avg'].apply(lambda x: round(x,2))
+        df['assists_avg']=df['assists_avg'].apply(lambda x: round(x,2))
+        df['turnovers_avg']=df['turnovers_avg'].apply(lambda x: round(x,2))
+        df['blocks_favor_avg']=df['blocks_favor_avg'].apply(lambda x: round(x,2))
+        df['blocks_against_avg']=df['blocks_against_avg'].apply(lambda x: round(x,2))
+        df['dunks_avg']=df['dunks_avg'].apply(lambda x: round(x,2))
+        df['personal_fouls_avg']=df['personal_fouls_avg'].apply(lambda x: round(x,2))
+        df['fouls_received_avg']=df['fouls_received_avg'].apply(lambda x: round(x,2))
+        df['efficiency_avg']=df['efficiency_avg'].apply(lambda x: round(x,2))
+        df.columns=['SEASON', 'TEAM_NAME_EXTENDED', 'STAGE_NAME_EXTENDED', 'N_MATCHES', 'MIN', 'POINTS', 'TWOS_IN', 'TWOS_TRIED', 'TWOS_PERC', 'THREES_IN', 'THREES_TRIED', 'THREES_PERC', 'FIELD_GOALS_IN', 'FIELD_GOALS_TRIED', 'FIELD_GOALS_PERC', 'FREE_THROWS_IN', 'FREE_THROWS_TRIED', 'FREE_THROWS_PERC', 'OFFENSIVE_REBOUNDS', 'DEFFENSIVE_REBOUNDS', 'TOTAL_REBOUNDS', 'ASSISTS', 'TURNOVERS', 'BLOCKS_FAVOR', 'BLOCKS_AGAINST', 'DUNKS', 'PERSONAL_FOULS', 'FOULS_RECEIVED', 'EFFICIENCY']
+
+        return df
 
 
-player_stats = PlayerStats(2274861)
-stats, years = player_stats.get_shooting_stats()
-player_info=player_stats.info_query()
-player_path=player_stats.path()
-#player_path.info()
+player_id=2274861
+player_stats = PlayerStats(player_id)
+player_stats_total=player_stats.stats_total_table()
+player_stats_avg=player_stats.stats_avg_table()
+
+
