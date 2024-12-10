@@ -1,1 +1,1 @@
-# cbmoron-project
+Build and compose postgres_container first
