@@ -1,18 +1,12 @@
-from taipy.gui import Gui,notify
-import taipy as tp
 import pandas as pd
-import plotly.express as px
-import taipy.gui.builder as tgb
 from matplotlib import pyplot as plt
 from matplotlib.patches import Circle, Rectangle, Arc, Wedge
-import io
 from datetime import datetime
-from PIL import Image
 import matplotlib.image as mpimg
 import psycopg2
 
 
-data_not_found_path=r'C:\Users\Jose\Desktop\New folder\Proyectos_Python\cbmoron-project\cbmoron\frontend\data_not_found.png'
+data_not_found_path="data_not_found.png"
 
 
 def draw_court(color="black", lw=1, outer_lines=True, dic_stats=None ,year=None):
@@ -65,67 +59,67 @@ def draw_court(color="black", lw=1, outer_lines=True, dic_stats=None ,year=None)
         
         try:
             right_corner_three_total=f"{dic_stats[year]['Right Corner Three']['in']}/{dic_stats[year]['Right Corner Three']['tried']}"
-            right_corner_three=f'{round((int(dic_stats[year]['Right Corner Three']['in'])/int(dic_stats[year]['Right Corner Three']['tried']))*100,2)}%'
+            right_corner_three=f"{round((int(dic_stats[year]['Right Corner Three']['in'])/int(dic_stats[year]['Right Corner Three']['tried']))*100,2)}%"
         except:
             right_corner_three_total=f"{dic_stats[year]['Right Corner Three']['in']}/{dic_stats[year]['Right Corner Three']['tried']}"
             right_corner_three='0%'
         try:
             right_corner_middle_total=f"{dic_stats[year]['Right Corner Middle']['in']}/{dic_stats[year]['Right Corner Middle']['tried']}"
-            right_corner_middle=f'{round((int(dic_stats[year]['Right Corner Middle']['in'])/int(dic_stats[year]['Right Corner Middle']['tried']))*100,2)}%'
+            right_corner_middle=f"{round((int(dic_stats[year]['Right Corner Middle']['in'])/int(dic_stats[year]['Right Corner Middle']['tried']))*100,2)}%"
         except:
             right_corner_middle_total=f"{dic_stats[year]['Right Corner Middle']['in']}/{dic_stats[year]['Right Corner Middle']['tried']}"
             right_corner_middle='0%'
         try:
             right_side_three_total=f"{dic_stats[year]['Right Side Three']['in']}/{dic_stats[year]['Right Side Three']['tried']}"
-            right_side_three=f'{round((int(dic_stats[year]['Right Side Three']['in'])/int(dic_stats[year]['Right Side Three']['tried']))*100,2)}%'
+            right_side_three=f"{round((int(dic_stats[year]['Right Side Three']['in'])/int(dic_stats[year]['Right Side Three']['tried']))*100,2)}%"
         except:
             right_side_three_total=f"{dic_stats[year]['Right Side Three']['in']}/{dic_stats[year]['Right Side Three']['tried']}"
             right_side_three='0%'
         try:
             right_side_middle_total=f"{dic_stats[year]['Right Side Middle']['in']}/{dic_stats[year]['Right Side Middle']['tried']}"
-            right_side_middle=f'{round((int(dic_stats[year]['Right Side Middle']['in'])/int(dic_stats[year]['Right Side Middle']['tried']))*100,2)}%'
+            right_side_middle=f"{round((int(dic_stats[year]['Right Side Middle']['in'])/int(dic_stats[year]['Right Side Middle']['tried']))*100,2)}%"
         except:
             right_side_middle_total=f"{dic_stats[year]['Right Side Middle']['in']}/{dic_stats[year]['Right Side Middle']['tried']}"
             right_side_middle='0%'
         try:
             front_three_total=f"{dic_stats[year]['Front Three']['in']}/{dic_stats[year]['Front Three']['tried']}"
-            front_three=f'{round((int(dic_stats[year]['Front Three']['in'])/int(dic_stats[year]['Front Three']['tried']))*100,2)}%'
+            front_three=f"{round((int(dic_stats[year]['Front Three']['in'])/int(dic_stats[year]['Front Three']['tried']))*100,2)}%"
         except:
             front_three_total=f"{dic_stats[year]['Front Three']['in']}/{dic_stats[year]['Front Three']['tried']}"
             front_three='0%'
         try:
             front_middle_total=f"{dic_stats[year]['Front Middle']['in']}/{dic_stats[year]['Front Middle']['tried']}"
-            front_middle=f'{round((int(dic_stats[year]['Front Middle']['in'])/int(dic_stats[year]['Front Middle']['tried']))*100,2)}%'
+            front_middle=f"{round((int(dic_stats[year]['Front Middle']['in'])/int(dic_stats[year]['Front Middle']['tried']))*100,2)}%"
         except:
             front_middle_total=f"{dic_stats[year]['Front Middle']['in']}/{dic_stats[year]['Front Middle']['tried']}"
             front_middle='0%'
         try:
             left_side_three_total=f"{dic_stats[year]['Left Side Three']['in']}/{dic_stats[year]['Left Side Three']['tried']}"
-            left_side_three=f'{round((int(dic_stats[year]['Left Side Three']['in'])/int(dic_stats[year]['Left Side Three']['tried']))*100,2)}%'
+            left_side_three=f"{round((int(dic_stats[year]['Left Side Three']['in'])/int(dic_stats[year]['Left Side Three']['tried']))*100,2)}%"
         except:
             left_side_three_total=f"{dic_stats[year]['Left Side Three']['in']}/{dic_stats[year]['Left Side Three']['tried']}"
             left_side_three='0%'
         try:
             left_side_middle_total=f"{dic_stats[year]['Left Side Middle']['in']}/{dic_stats[year]['Left Side Middle']['tried']}"
-            left_side_middle=f'{round((int(dic_stats[year]['Left Side Middle']['in'])/int(dic_stats[year]['Left Side Middle']['tried']))*100,2)}%'
+            left_side_middle=f"{round((int(dic_stats[year]['Left Side Middle']['in'])/int(dic_stats[year]['Left Side Middle']['tried']))*100,2)}%"
         except:
             left_side_middle_total=f"{dic_stats[year]['Left Side Middle']['in']}/{dic_stats[year]['Left Side Middle']['tried']}"
             left_side_middle='0%'
         try:
             left_corner_three_total=f"{dic_stats[year]['Left Corner Three']['in']}/{dic_stats[year]['Left Corner Three']['tried']}"
-            left_corner_three=f'{round((int(dic_stats[year]['Left Corner Three']['in'])/int(dic_stats[year]['Left Corner Three']['tried']))*100,2)}%'
+            left_corner_three=f"{round((int(dic_stats[year]['Left Corner Three']['in'])/int(dic_stats[year]['Left Corner Three']['tried']))*100,2)}%"
         except:
             left_corner_three_total=f"{dic_stats[year]['Left Corner Three']['in']}/{dic_stats[year]['Left Corner Three']['tried']}"
             left_corner_three='0%'
         try:
             left_corner_middle_total=f"{dic_stats[year]['Left Corner Middle']['in']}/{dic_stats[year]['Left Corner Middle']['tried']}"
-            left_corner_middle=f'{round((int(dic_stats[year]['Left Corner Middle']['in'])/int(dic_stats[year]['Left Corner Middle']['tried']))*100,2)}%'
+            left_corner_middle=f"{round((int(dic_stats[year]['Left Corner Middle']['in'])/int(dic_stats[year]['Left Corner Middle']['tried']))*100,2)}%"
         except:
             left_corner_middle_total=f"{dic_stats[year]['Left Corner Middle']['in']}/{dic_stats[year]['Left Corner Middle']['tried']}"
             left_corner_middle='0%'
         try:
             zone_total=f"{dic_stats[year]['Zone']['in']}/{dic_stats[year]['Zone']['tried']}"
-            zone=f'{round((int(dic_stats[year]['Zone']['in'])/int(dic_stats[year]['Zone']['tried']))*100,2)}%'
+            zone=f"{round((int(dic_stats[year]['Zone']['in'])/int(dic_stats[year]['Zone']['tried']))*100,2)}%"
         except:
             zone_total=f"{dic_stats[year]['Zone']['in']}/{dic_stats[year]['Zone']['tried']}"
             zone='0%'
@@ -196,7 +190,7 @@ class PlayerStats:
     def connect(self):
         self.conn = psycopg2.connect(
             dbname='cbmoron_database',
-            host='localhost',
+            host='postgres_container',
             user='root',
             password='root'
         )
@@ -205,7 +199,18 @@ class PlayerStats:
     def close_connection(self):
         self.cur.close()
         self.conn.close()
-
+    
+    def list_of_players(self):
+        self.connect()
+        self.cur.execute("""
+            SELECT player_id,player_name
+            FROM players_info
+                         """)
+        df = pd.DataFrame(self.cur.fetchall())
+        df.columns=['player_id','player_name']
+        self.close_connection()
+        return df
+        
     def get_shooting_query(self):
         self.connect()
         params = [self.player_id]
@@ -282,14 +287,14 @@ class PlayerStats:
     def path(self):
         ###########################
         self.connect()
-        params = [self.player_id,self.player_id]
+        params = [self.player_id,self.player_id,self.player_id]
         self.cur.execute("""
             WITH min_avg_table AS(
                 SELECT season,CONCAT(TRUNC(weighted,0),':',ROUND((MOD(weighted,1) *60::integer),0)) AS min_avg
                 FROM(
                 SELECT season,SUM(ROUND((SPLIT_PART(min_total, ':', 1)::integer + SPLIT_PART(min_total, ':', 2)::integer/60::numeric),2))/SUM(n_matches) AS weighted
                 FROM players_stats_career
-                WHERE player_id = 2274861
+                WHERE player_id = %s
                 GROUP BY season))
             
             , pathh AS(
@@ -316,8 +321,8 @@ class PlayerStats:
             ORDER BY years DESC;
         """, params)
         df = pd.DataFrame(self.cur.fetchall())
-        
         df.columns = ['identifier', 'player_id', 'season', 'league','team_id','team_name','license','date_in','date_out','years','n_matches','efficiency','min_avg']
+        df=df.dropna(subset=['identifier']).reset_index(drop=True)
         df=df[['season', 'league','team_name','n_matches','efficiency','min_avg']]
         df['n_matches']=df['n_matches'].apply(lambda x: int(x))
         df['efficiency']=df['efficiency'].apply(lambda x: round(float(x),2))
@@ -392,7 +397,7 @@ class PlayerStats:
         df['fouls_received_total']=df['fouls_received_total'].apply(lambda x: int(x))
         df['efficiency_total']=df['efficiency_total'].apply(lambda x: int(x))
         df.columns=['SEASON', 'TEAM_NAME_EXTENDED', 'STAGE_NAME_EXTENDED', 'N_MATCHES', 'MIN', 'POINTS', 'TWOS_IN', 'TWOS_TRIED', 'TWOS_PERC', 'THREES_IN', 'THREES_TRIED', 'THREES_PERC', 'FIELD_GOALS_IN', 'FIELD_GOALS_TRIED', 'FIELD_GOALS_PERC', 'FREE_THROWS_IN', 'FREE_THROWS_TRIED', 'FREE_THROWS_PERC', 'OFFENSIVE_REBOUNDS', 'DEFFENSIVE_REBOUNDS', 'TOTAL_REBOUNDS', 'ASSISTS', 'TURNOVERS', 'BLOCKS_FAVOR', 'BLOCKS_AGAINST', 'DUNKS', 'PERSONAL_FOULS', 'FOULS_RECEIVED', 'EFFICIENCY']
-
+        self.close_connection()
         return df
 
     def stats_avg_table(self):
@@ -463,13 +468,15 @@ class PlayerStats:
         df['fouls_received_avg']=df['fouls_received_avg'].apply(lambda x: round(x,2))
         df['efficiency_avg']=df['efficiency_avg'].apply(lambda x: round(x,2))
         df.columns=['SEASON', 'TEAM_NAME_EXTENDED', 'STAGE_NAME_EXTENDED', 'N_MATCHES', 'MIN', 'POINTS', 'TWOS_IN', 'TWOS_TRIED', 'TWOS_PERC', 'THREES_IN', 'THREES_TRIED', 'THREES_PERC', 'FIELD_GOALS_IN', 'FIELD_GOALS_TRIED', 'FIELD_GOALS_PERC', 'FREE_THROWS_IN', 'FREE_THROWS_TRIED', 'FREE_THROWS_PERC', 'OFFENSIVE_REBOUNDS', 'DEFFENSIVE_REBOUNDS', 'TOTAL_REBOUNDS', 'ASSISTS', 'TURNOVERS', 'BLOCKS_FAVOR', 'BLOCKS_AGAINST', 'DUNKS', 'PERSONAL_FOULS', 'FOULS_RECEIVED', 'EFFICIENCY']
-
+        self.close_connection()
         return df
 
 
-player_id=2274861
+"""player_id=2433401
 player_stats = PlayerStats(player_id)
+df=player_stats.path()
+
 player_stats_total=player_stats.stats_total_table()
 player_stats_avg=player_stats.stats_avg_table()
-
+"""
 
