@@ -36,11 +36,16 @@ def create_fig(df,stat,stat_mode):
     print(title)
     title=title.upper()
     df=df.sort_values("SEASON")
-    fig = px.line(data_frame=df,x='SEASON', y=stat, title=title)
+    if len(df)>1:
+        fig = px.line(data_frame=df,x='SEASON', y=stat, title=title)
+    else:
+        fig = px.bar(data_frame=df,x='SEASON', y=stat, title=title)
     return fig
 
-#Marc Gasol id
-player_id=360978
+"""#Marc Gasol id
+player_id=360978"""
+#
+player_id=1197937
 player_stats = analysis.PlayerStats(player_id)
 
 #Input
@@ -58,8 +63,11 @@ player_info=player_stats.info_query()
 player_path=player_stats.path()
 name=player_info['player_name']
 age=player_info['age']
-last_season=player_path.loc[0].SEASON
-last_league=player_path.loc[0].LEAGUE
+try:
+    last_season=player_path.loc[0].SEASON
+    last_league=player_path.loc[0].LEAGUE
+except:
+    print('Error in SEASON or LEAGUE')
 position=player_info['position']
 nationality=player_info['nationality']
 
@@ -104,8 +112,12 @@ def new_player(state,id,payload):
     state.name=player_info['player_name']
     state.age=player_info['age']
 
-    state.last_season=player_path.loc[0].SEASON
-    state.last_league=player_path.loc[0].LEAGUE
+    try:
+        state.last_season=player_path.loc[0].SEASON
+        state.last_league=player_path.loc[0].LEAGUE
+    except:
+        print('Error getting SEASON or LEAGUE')
+
     state.position=player_info['position']
     state.nationality=player_info['nationality']
 

@@ -6,11 +6,13 @@ import matplotlib.image as mpimg
 import psycopg2
 
 
+
 data_not_found_path="data_not_found.png"
+host='postgres_container'
 
 
 def draw_court(color="black", lw=1, outer_lines=True, dic_stats=None ,year=None):
-    
+    plt.close('all')
     fig, ax = plt.subplots()
     if year in dic_stats.keys():
         # Basketball Hoop
@@ -165,7 +167,7 @@ def draw_court(color="black", lw=1, outer_lines=True, dic_stats=None ,year=None)
         ax.patch.set_facecolor('white')
         fig.patch.set_facecolor('none')
         ax.plot()
-        #plt.show()
+        
     else:
         img = mpimg.imread(data_not_found_path)
         ax.imshow(img)
@@ -176,7 +178,7 @@ def draw_court(color="black", lw=1, outer_lines=True, dic_stats=None ,year=None)
         ax.set_yticks([])
         ax.patch.set_facecolor('white')
         fig.patch.set_facecolor('none')
-        ax.plot()
+        #ax.plot()
         
     return fig
 
@@ -190,7 +192,7 @@ class PlayerStats:
     def connect(self):
         self.conn = psycopg2.connect(
             dbname='cbmoron_database',
-            host='postgres_container',
+            host=host,
             user='root',
             password='root'
         )
@@ -289,41 +291,37 @@ class PlayerStats:
         self.connect()
         params = [self.player_id,self.player_id,self.player_id]
         self.cur.execute("""
-            WITH min_avg_table AS(
-                SELECT season,CONCAT(TRUNC(weighted,0),':',ROUND((MOD(weighted,1) *60::integer),0)) AS min_avg
-                FROM(
-                SELECT season,SUM(ROUND((SPLIT_PART(min_total, ':', 1)::integer + SPLIT_PART(min_total, ':', 2)::integer/60::numeric),2))/SUM(n_matches) AS weighted
-                FROM players_stats_career
-                WHERE player_id = %s
-                GROUP BY season))
-            
-            , pathh AS(
-                SELECT *,substring(team_name, position('[' in team_name) + 1, position(']' in team_name) - position('[' in team_name) - 1)AS path_team_name,
-                CASE
-                    WHEN LEFT(season, 2)::integer < 90  THEN ('20'|| LEFT(season, 2)) ::integer
-                    WHEN LEFT(season, 2)::integer >= 90  THEN ('19'|| LEFT(season, 2)) ::integer
-                    ELSE 1900
-                END AS years
-                FROM public.players_career_path
-                WHERE player_id = %s
-                ORDER BY years,date_in ASC)
-
-            SELECT pathh.identifier,pathh.player_id,pathh.season,pathh.league,pathh.team_id,pathh.team_name,pathh.license,pathh.date_in,pathh.date_out,pathh.years,matches_table.n_matches,matches_table.efficiency_avg,min_avg_table.min_avg
-            FROM(
-                SELECT season , team_name_extended, SUM(n_matches) AS n_matches, ROUND(SUM(efficiency_avg * n_matches)::numeric / SUM(n_matches)::numeric,2) AS efficiency_avg
-                FROM public.players_stats_career
-                WHERE player_id = %s
-                GROUP BY  team_name_extended,season
-                ORDER BY season) AS matches_table
-            LEFT JOIN pathh ON matches_table.team_name_extended  = pathh.path_team_name
-            LEFT JOIN min_avg_table ON matches_table.season = min_avg_table.season
-            
-            ORDER BY years DESC;
+            SELECT season,league,team_name,n_matches, efficiency_avg, min_avg
+            FROM(SELECT ROW_NUMBER() OVER (PARTITION BY season,league,team_name,n_matches,efficiency_avg,min_avg ORDER BY season,team_name) AS r_number,*
+                FROM(WITH pathh AS(SELECT substring(team_name, position('[' in team_name) + 1, position(']' in team_name) - position('[' in team_name) - 1)AS path_team_name,*
+                                FROM players_career_path
+                                WHERE player_id = %s)
+                                
+                    SELECT stats.season AS season, league, pathh.team_name AS team_name, n_matches, efficiency_avg, min_avg
+                    FROM(WITH temporal AS (SELECT season,team_name_extended,CONCAT(TRUNC(weighted,0),':',ROUND((MOD(weighted,1) *60::integer),0)) AS min_avg
+                                    FROM(SELECT season,team_name_extended,SUM(ROUND((SPLIT_PART(min_total, ':', 1)::integer + SPLIT_PART(min_total, ':', 2)::integer/60::numeric),2))/SUM(n_matches) AS weighted
+                                        FROM public.players_stats_career
+                                        WHERE player_id = %s
+                                        GROUP BY season,team_name_extended))
+                                        
+                        SELECT players_stats_career.season,
+                            players_stats_career.team_name_extended,
+                            SUM(n_matches) AS n_matches,
+                            ROUND(SUM(efficiency_avg * n_matches)::numeric / SUM(n_matches)::numeric,2) AS efficiency_avg,
+                            temporal.min_avg
+                        FROM players_stats_career
+                        INNER JOIN temporal ON temporal.season = players_stats_career.season AND temporal.team_name_extended = players_stats_career.team_name_extended
+                        WHERE player_id = %s
+                        GROUP BY players_stats_career.season,players_stats_career.team_name_extended,temporal.min_avg
+                        ORDER BY season DESC) AS stats
+                    LEFT JOIN pathh ON stats.season = pathh.season AND (stats.team_name_extended = pathh.team_name OR stats.team_name_extended = pathh.path_team_name)
+                    )
+                )
+            WHERE r_number=1
+            ORDER BY season DESC;
         """, params)
         df = pd.DataFrame(self.cur.fetchall())
-        df.columns = ['identifier', 'player_id', 'season', 'league','team_id','team_name','license','date_in','date_out','years','n_matches','efficiency','min_avg']
-        df=df.dropna(subset=['identifier']).reset_index(drop=True)
-        df=df[['season', 'league','team_name','n_matches','efficiency','min_avg']]
+        df.columns = ['season','league','team_name','n_matches', 'efficiency', 'min_avg']
         df['n_matches']=df['n_matches'].apply(lambda x: int(x))
         df['efficiency']=df['efficiency'].apply(lambda x: round(float(x),2))
         df.columns = ['SEASON', 'LEAGUE','TEAM NAME','NUMBER OF MATCHES','EFFICIENCY','MINUTES PER MATCH']
@@ -335,37 +333,49 @@ class PlayerStats:
         params = [self.player_id]
         self.cur.execute("""
             SELECT season,
-                MIN(team_name_extended) AS team_name_extended,
-                MIN(stage_name_extended) AS stage_name_extended,
-                SUM(n_matches) AS n_matches,
-                MIN(min_total) AS min_total,
-                SUM(points_total) AS points_total ,
-                SUM(twos_in_total) AS twos_in_total,
-                SUM(twos_tried_total) AS twos_tried_total,
-                SUM(twos_in_total)/SUM(twos_tried_total) AS twos_perc,
-                SUM(threes_in_total) AS threes_in_total,
-                SUM(threes_tried_total) AS threes_tried_total,
-                SUM(threes_in_total)/SUM(threes_tried_total) AS threes_perc,
-                SUM(field_goals_in_total) AS field_goals_in_total,
-                SUM(field_goals_tried_total) AS field_goals_tried_total,
-                SUM(field_goals_in_total)/SUM(field_goals_tried_total) AS field_goals_perc,
-                SUM(free_throws_in_total) AS free_throws_in_total,
-                SUM(free_throws_tried_total) AS free_throws_tried_total,
-                SUM(free_throws_in_total)/SUM(free_throws_tried_total) AS free_throws_perc,
-                SUM(offensive_rebounds_total) AS offensive_rebounds_total,
-                SUM(deffensive_rebounds_total) AS deffensive_rebounds_total,
-                SUM(total_rebounds_total) AS total_rebounds_total,
-                SUM(assists_total) AS assists_total,
-                SUM(turnovers_total) AS turnovers_total,
-                SUM(blocks_favor_total) AS blocks_favor_total,
-                SUM(blocks_against_total) AS blocks_against_total,
-                SUM(dunks_total)AS dunks_total,
-                SUM(personal_fouls_total) AS personal_fouls_total,
-                SUM(fouls_received_total) AS fouls_received_total,
-                SUM(efficiency_total) AS efficiency_total  
+                   team_name_extended,
+                   stage_name_extended,
+                   SUM(n_matches) AS n_matches,
+                   MIN(min_total) AS min_total,
+                   SUM(points_total) AS points_total ,
+                   SUM(twos_in_total) AS twos_in_total,
+                   SUM(twos_tried_total) AS twos_tried_total,
+                   CASE 
+                       WHEN SUM(twos_tried_total)=0 THEN 0
+                       WHEN SUM(twos_tried_total)!=0 THEN SUM(twos_in_total)/SUM(twos_tried_total)
+                   END AS twos_perc,
+                   SUM(threes_in_total) AS threes_in_total,
+                   SUM(threes_tried_total) AS threes_tried_total,
+                   CASE
+                       WHEN SUM(threes_tried_total)=0 THEN 0
+                       WHEN SUM(threes_tried_total)!=0 THEN SUM(threes_in_total)/SUM(threes_tried_total)
+                   END AS threes_perc,
+                   SUM(field_goals_in_total) AS field_goals_in_total,
+                   SUM(field_goals_tried_total) AS field_goals_tried_total,
+                   CASE
+                       WHEN SUM(field_goals_tried_total)=0 THEN 0
+                       WHEN SUM(field_goals_tried_total)!=0 THEN SUM(field_goals_in_total)/SUM(field_goals_tried_total)
+                   END AS field_goals_perc,
+                   SUM(free_throws_in_total) AS free_throws_in_total,
+                   SUM(free_throws_tried_total) AS free_throws_tried_total,
+                   CASE
+                       WHEN SUM(free_throws_tried_total)=0 THEN 0
+                       WHEN SUM(free_throws_tried_total)!=0 THEN SUM(free_throws_in_total)/SUM(free_throws_tried_total)
+                   END AS free_throws_perc,
+                   SUM(offensive_rebounds_total) AS offensive_rebounds_total,
+                   SUM(deffensive_rebounds_total) AS deffensive_rebounds_total,
+                   SUM(total_rebounds_total) AS total_rebounds_total,
+                   SUM(assists_total) AS assists_total,
+                   SUM(turnovers_total) AS turnovers_total,
+                   SUM(blocks_favor_total) AS blocks_favor_total,
+                   SUM(blocks_against_total) AS blocks_against_total,
+                   SUM(dunks_total)AS dunks_total,
+                   SUM(personal_fouls_total) AS personal_fouls_total,
+                   SUM(fouls_received_total) AS fouls_received_total,
+                   SUM(efficiency_total) AS efficiency_total  
             FROM players_stats_career
             WHERE player_id = %s
-            GROUP BY season
+            GROUP BY season,team_name_extended,stage_name_extended
             ORDER BY season DESC
         """,params)
 
@@ -405,37 +415,112 @@ class PlayerStats:
         params = [self.player_id]
         self.cur.execute("""
             SELECT season,
-                MIN(team_name_extended) AS team_name_extended,
-                MIN(stage_name_extended) AS stage_name_extended,
-                SUM(n_matches) AS n_matches,
-                DATE_TRUNC('second', '00:00:00' + (SUM(EXTRACT(EPOCH FROM min_avg) * n_matches) / SUM(n_matches)) * INTERVAL '1 second') AS min_avg,
-                SUM(points_avg*n_matches)/SUM(n_matches) AS points_avg,
-                SUM(twos_in_avg*n_matches)/SUM(n_matches) AS twos_in_avg,
-                SUM(twos_tried_avg*n_matches)/SUM(n_matches) AS twos_tried_avg,
-                SUM(twos_perc*n_matches)/SUM(n_matches) AS twos_perc,
-                SUM(threes_in_avg*n_matches)/SUM(n_matches) AS threes_in_avg,
-                SUM(threes_tried_avg*n_matches)/SUM(n_matches) AS threes_tried_avg,
-                SUM(threes_perc*n_matches)/SUM(n_matches) AS threes_perc,
-                SUM(field_goals_in_avg*n_matches)/SUM(n_matches) AS field_goals_in_avg,
-                SUM(field_goals_tried_avg*n_matches)/SUM(n_matches) AS field_goals_tried_avg,
-                SUM(field_goals_perc*n_matches)/SUM(n_matches) AS field_goals_perc,
-                SUM(free_throws_in_avg*n_matches)/SUM(n_matches) AS free_throws_in_avg,
-                SUM(free_throws_tried_avg*n_matches)/SUM(n_matches) AS free_throws_tried_avg,
-                SUM(free_throws_perc*n_matches)/SUM(n_matches) AS free_throws_perc,
-                SUM(offensive_rebounds_avg*n_matches)/SUM(n_matches) AS offensive_rebounds_avg,
-                SUM(deffensive_rebounds_avg*n_matches)/SUM(n_matches) AS deffensive_rebounds_avg,
-                SUM(total_rebounds_avg*n_matches)/SUM(n_matches) AS total_rebounds_avg,
-                SUM(assists_avg*n_matches)/SUM(n_matches) AS assists_avg,
-                SUM(turnovers_avg*n_matches)/SUM(n_matches) AS turnovers_avg,
-                SUM(blocks_favor_avg*n_matches)/SUM(n_matches) AS blocks_favor_avg,
-                SUM(blocks_against_avg*n_matches)/SUM(n_matches) AS blocks_against_avg,
-                SUM(dunks_avg*n_matches)/SUM(n_matches)AS dunks_avg,
-                SUM(personal_fouls_avg*n_matches)/SUM(n_matches) AS personal_fouls_avg,
-                SUM(fouls_received_avg*n_matches)/SUM(n_matches) AS fouls_received_avg,
-                SUM(efficiency_avg*n_matches)/SUM(n_matches) AS efficiency_avg
+                   team_name_extended,
+                   stage_name_extended,
+                   SUM(n_matches) AS n_matches,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN '00:00'
+                       WHEN SUM(n_matches)!=0 THEN DATE_TRUNC('second', '00:00:00' + (SUM(EXTRACT(EPOCH FROM min_avg) * n_matches) / SUM(n_matches)) * INTERVAL '1 second') 
+                   END AS min_avg,
+                   CASE
+                   WHEN SUM(n_matches)=0 THEN 0
+                   WHEN SUM(n_matches)!=0 THEN SUM(points_avg*n_matches)/SUM(n_matches)
+                   END AS points_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(twos_in_avg*n_matches)/SUM(n_matches)
+                   END AS twos_in_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(twos_tried_avg*n_matches)/SUM(n_matches)
+                   END AS twos_tried_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(twos_perc*n_matches)/SUM(n_matches)
+                   END AS twos_perc,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(threes_in_avg*n_matches)/SUM(n_matches)
+                   END AS threes_in_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(threes_tried_avg*n_matches)/SUM(n_matches)
+                   END AS threes_tried_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(threes_perc*n_matches)/SUM(n_matches)
+                   END AS threes_perc,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(field_goals_in_avg*n_matches)/SUM(n_matches)
+                   END AS field_goals_in_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(field_goals_tried_avg*n_matches)/SUM(n_matches)
+                   END AS field_goals_tried_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(field_goals_perc*n_matches)/SUM(n_matches)
+                   END AS field_goals_perc,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(free_throws_in_avg*n_matches)/SUM(n_matches)
+                   END AS free_throws_in_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(free_throws_tried_avg*n_matches)/SUM(n_matches)
+                   END AS free_throws_tried_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(free_throws_perc*n_matches)/SUM(n_matches)
+                   END AS free_throws_perc,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(offensive_rebounds_avg*n_matches)/SUM(n_matches)
+                   END AS offensive_rebounds_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(deffensive_rebounds_avg*n_matches)/SUM(n_matches)
+                   END AS deffensive_rebounds_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(total_rebounds_avg*n_matches)/SUM(n_matches)
+                   END AS total_rebounds_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(assists_avg*n_matches)/SUM(n_matches)
+                   END AS assists_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(turnovers_avg*n_matches)/SUM(n_matches)
+                   END AS turnovers_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(blocks_favor_avg*n_matches)/SUM(n_matches)
+                   END AS blocks_favor_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(blocks_against_avg*n_matches)/SUM(n_matches)
+                   END AS blocks_against_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(dunks_avg*n_matches)/SUM(n_matches)
+                   END AS dunks_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(personal_fouls_avg*n_matches)/SUM(n_matches)
+                   END AS personal_fouls_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(fouls_received_avg*n_matches)/SUM(n_matches)
+                   END AS fouls_received_avg,
+                   CASE
+                       WHEN SUM(n_matches)=0 THEN 0
+                       WHEN SUM(n_matches)!=0 THEN SUM(efficiency_avg*n_matches)/SUM(n_matches)
+                   END AS efficiency_avg
             FROM players_stats_career
             WHERE player_id = %s
-            GROUP BY season
+            GROUP BY season,team_name_extended,stage_name_extended
             ORDER BY season DESC
         """,params)
 
@@ -472,11 +557,5 @@ class PlayerStats:
         return df
 
 
-"""player_id=2433401
-player_stats = PlayerStats(player_id)
-df=player_stats.path()
 
-player_stats_total=player_stats.stats_total_table()
-player_stats_avg=player_stats.stats_avg_table()
-"""
 
