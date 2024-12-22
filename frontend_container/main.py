@@ -42,10 +42,8 @@ def create_fig(df,stat,stat_mode):
         fig = px.bar(data_frame=df,x='SEASON', y=stat, title=title)
     return fig
 
-"""#Marc Gasol id
-player_id=360978"""
-#
-player_id=1197937
+#Marc Gasol id
+player_id=360978
 player_stats = analysis.PlayerStats(player_id)
 
 #Input

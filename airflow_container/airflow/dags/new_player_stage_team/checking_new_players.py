@@ -6,6 +6,8 @@ from selenium.webdriver.common.by import By
 from datetime import datetime
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from minio import Minio
+import io
 
 
 def open_browser():
@@ -25,6 +27,25 @@ def open_browser():
         seleniumwire_options=sw_options
         )
     return driver
+
+
+def insert_player_image(driver,player_id,minio_api_key,minio_pass_key,minio_bucket):
+    photo_link=f'https://imagenes.feb.es/Foto.aspx?c={player_id}'
+    for req in driver.requests:
+        if req.url == photo_link:
+            image_response=req.response.body
+            content_length=int(req.response.headers.get('Content-Length'))
+            break
+    try:
+        try:
+            client = Minio(endpoint="http://minio_container:9000",access_key=minio_api_key,secret_key=minio_pass_key,secure=False)
+        except Exception as e:
+            print('NO CLIENT ',e)
+        object_name = f"{player_id}.png"
+        file = io.BytesIO(image_response)
+        client.put_object(minio_bucket, object_name, data=file, length=content_length)
+    except Exception as e:
+        print("Error inserting image into Minio ",e)
 
 
 def info_table_scraper(info_table,player_id,player_name,player_link): #return df
@@ -287,7 +308,10 @@ def stats_scraper(totals_stats_table,player_id,season,team_name): #return df
     return pd.DataFrame({'player_id':player_ids,'season':seasons,'team_name_extended':team_names,'stage_abbrev':stage_abbrevs,'stage_name':stage_names,'n_matches':ns_matches,'min_total':mins_total,'min_avg':mins_avg,'points_total':points_totals,'points_avg':points_avgs,'twos_in_total':t2_in_totals,'twos_tried_total':t2_tried_totals,'twos_perc':t2_percs,'twos_in_avg':t2_in_avgs,'twos_tried_avg':t2_tried_avgs,'threes_in_total':t3_in_totals,'threes_tried_total':t3_tried_totals,'threes_perc':t3_percs,'threes_in_avg':t3_in_avgs,'threes_tried_avg':t3_tried_avgs,'field_goals_in_total':field_goals_in_totals,'field_goals_tried_total':field_goals_tried_totals,'field_goals_perc':field_goals_percs,'field_goals_in_avg':field_goals_in_avgs,'field_goals_tried_avg':field_goals_tried_avgs,'free_throws_in_total':free_throws_in_totals,'free_throws_tried_total':free_throws_tried_totals,'free_throws_perc':free_throws_percs,'free_throws_in_avg':free_throws_in_avgs,'free_throws_tried_avg':free_throws_tried_avgs,'offensive_rebounds_total':offensive_rebounds_totals,'offensive_rebounds_avg':offensive_rebounds_avgs,'deffensive_rebounds_total':deffensive_rebounds_totals,'deffensive_rebounds_avg':deffensive_rebounds_avgs,'total_rebounds_total':total_rebounds_totals,'total_rebounds_avg':total_rebounds_avgs,'assists_total':assists_totals,'assists_avg':assists_avgs,'turnovers_total':turnovers_totals,'turnovers_avg':turnovers_avgs,'blocks_favor_total':blocks_favor_totals,'blocks_favor_avg':blocks_favor_avgs,'blocks_against_total':blocks_against_totals,'blocks_against_avg':blocks_against_avgs,'dunks_total':dunks_totals,'dunks_avg':dunks_avgs,'personal_fouls_total':personal_fouls_totals,'personal_fouls_avg':personal_fouls_avgs,'fouls_received_total':fouls_received_totals,'fouls_received_avg':fouls_received_avgs,'efficiency_total':efficiency_totals,'efficiency_avg':efficiency_avgs})
 
 
-def navigating_website(ti):
+def navigating_website(ti,**op_kwargs):
+    minio_api_key=op_kwargs['minio_api_key']
+    minio_pass_key=op_kwargs['minio_pass_key']
+    minio_bucket=op_kwargs['minio_bucket']
 
     driver=open_browser()
     result=ti.xcom_pull(task_ids='read_db_player')
@@ -303,6 +327,12 @@ def navigating_website(ti):
             driver.execute_script("arguments[0].click()", element)
             print('Trajectory clicked')
             time.sleep(1)
+            #####################################################################################
+            try:
+                insert_player_image(driver,player_id,minio_api_key,minio_pass_key,minio_bucket)
+            except Exception as e:
+                print("Error in insert_player_image ",e)
+            #####################################################################################
             soup=bs(driver.page_source,'lxml')
             player_name=soup.find('div',{'class':'jugador'}).find('div',{'class':'nombre'}).text
             player_info_table=soup.find('div',{'class':'info'})
@@ -319,6 +349,7 @@ def navigating_website(ti):
                 season='-'
                 team_name='-'
             stats=stats_scraper(totals_stats_table,player_id,season,team_name)
+
             ti.xcom_push(key=f'{player_id}_players_info',value=player_info)
             ti.xcom_push(key=f'{player_id}_players_career_path',value=career_path)
             ti.xcom_push(key=f'{player_id}_players_stats_career',value=stats)

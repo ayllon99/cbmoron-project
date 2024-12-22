@@ -15,6 +15,10 @@ url_primera=Variable.get(key='url_primera_feb')
 url_segunda=Variable.get(key='url_segunda_feb')
 url_tercera=Variable.get(key='url_tercera_feb')
 
+minio_api_key=Variable.get(key='minio_api_key')
+minio_pass_key=Variable.get(key='minio_pass_key')
+minio_bucket=Variable.get(key='minio_bucket')
+
 postgres_connection='cbmoron_dev'
 
 
@@ -77,7 +81,8 @@ with DAG(
 
     player_scraping = PythonOperator(
         task_id="scraping_new_players",
-        python_callable=checking_new_players.navigating_website
+        python_callable=checking_new_players.navigating_website,
+        op_kwargs={'minio_api_key':minio_api_key,'minio_pass_key':minio_pass_key,'minio_bucket':minio_bucket}
     )
 
     with TaskGroup("inserting_to_postgres_player",tooltip="Task Group for inserting data into postgres DB") as inserting_data_player:
@@ -113,7 +118,8 @@ with DAG(
 
     should_trigger_stage = PythonOperator(
         task_id="should_trigger_stage",
-        python_callable=trigger_evaluator_stage
+        python_callable=trigger_evaluator_stage,
+        trigger_rule='all_done'
     )
 
     stage_scraping = PythonOperator(
@@ -139,7 +145,8 @@ with DAG(
 
     should_trigger_team = PythonOperator(
         task_id="should_trigger_team",
-        python_callable=trigger_evaluator_team
+        python_callable=trigger_evaluator_team,
+        trigger_rule='all_done'
     )
 
     team_scraping = PythonOperator(
@@ -154,9 +161,12 @@ with DAG(
                 op_kwargs={'postgres_connection':postgres_connection}
     )
 
-    read_db_player >> should_trigger_player >> player_scraping >> inserting_data_player
+
+    """    read_db_player >> should_trigger_player >> player_scraping >> inserting_data_player
     read_db_stages >> should_trigger_stage >> stage_scraping >> inserting_stages
     read_db_teams >> should_trigger_team >> team_scraping >> inserting_teams
-
-
+    """    
+    read_db_player >> should_trigger_player >> player_scraping >> inserting_data_player >> should_trigger_stage
+    read_db_stages >> should_trigger_stage >> stage_scraping >> inserting_stages >> should_trigger_team
+    read_db_teams >> should_trigger_team >> team_scraping >> inserting_teams
 

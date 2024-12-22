@@ -6,7 +6,6 @@ import matplotlib.image as mpimg
 import psycopg2
 
 
-
 data_not_found_path="data_not_found.png"
 host='postgres_container'
 
