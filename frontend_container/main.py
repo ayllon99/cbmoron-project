@@ -60,6 +60,8 @@ list_of_players=list_of_players_df['player_name'].to_list()[:10]
 player_info=player_stats.info_query()
 player_path=player_stats.path()
 player_image,player_image_width,player_image_height=analysis.get_player_image(player_id)
+player_image_height=f"{player_image_height}px"
+player_image_width=f"{player_image_width}px"
 name=player_info['player_name']
 age=player_info['age']
 try:
@@ -70,7 +72,6 @@ except:
 position=player_info['position']
 nationality=player_info['nationality']
 
-print(player_image_width,player_image_height)
 #Shootings
 stats, years = player_stats.get_shooting_stats()
 images=[]
@@ -107,8 +108,12 @@ def new_player(state,id,payload):
 
     player_info=player_stats.info_query()
     player_path=player_stats.path()
+    player_image,player_image_width,player_image_height=analysis.get_player_image(player_id)
     state.player_path=player_path
     state.name=player_info['player_name']
+    player_image_height=f"{player_image_height}px"
+    player_image_width=f"{player_image_width}px"
+    state.player_image=player_image
     state.age=player_info['age']
 
     try:
@@ -190,7 +195,7 @@ with tgb.Page() as player_analysis:
     tgb.text(' ',mode='pre')
     with tgb.layout("1 1 1"):
         with tgb.part(class_name='m-auto'):
-            tgb.image(player_image,height=f"{player_image_height}px",width=f"{player_image_width}px")
+            tgb.image('{player_image}',height='{player_image_height}',width='{player_image_width}')
         with tgb.part(class_name='m-auto'):
             tgb.text('{name}',class_name="h2 text-center text-underline")
     tgb.text(' ',mode='pre')
