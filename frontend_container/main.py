@@ -2,8 +2,8 @@ from taipy.gui import Gui,notify
 import plotly.express as px
 import taipy.gui.builder as tgb
 import io
-#import cbmoron.frontend.analysis as analysis
-import analysis
+import analysis as analysis
+#import analysis
 from fuzzywuzzy import fuzz
 
 
@@ -59,6 +59,7 @@ list_of_players=list_of_players_df['player_name'].to_list()[:10]
 #Personal info + path
 player_info=player_stats.info_query()
 player_path=player_stats.path()
+player_image,player_image_width,player_image_height=analysis.get_player_image(player_id)
 name=player_info['player_name']
 age=player_info['age']
 try:
@@ -69,7 +70,7 @@ except:
 position=player_info['position']
 nationality=player_info['nationality']
 
-
+print(player_image_width,player_image_height)
 #Shootings
 stats, years = player_stats.get_shooting_stats()
 images=[]
@@ -187,7 +188,11 @@ with tgb.Page() as player_analysis:
             with tgb.part(class_name='d-inline-block m-auto d-flex justify-content-center'):
                 tgb.menu('{list_of_players}',on_action=new_player)
     tgb.text(' ',mode='pre')
-    tgb.text('{name}',class_name="h2 text-center text-underline")
+    with tgb.layout("1 1 1"):
+        with tgb.part(class_name='m-auto'):
+            tgb.image(player_image,height=f"{player_image_height}px",width=f"{player_image_width}px")
+        with tgb.part(class_name='m-auto'):
+            tgb.text('{name}',class_name="h2 text-center text-underline")
     tgb.text(' ',mode='pre')
     with tgb.layout("1 1 1 1 1"):
         with tgb.part():

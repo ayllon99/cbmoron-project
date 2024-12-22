@@ -38,12 +38,20 @@ def insert_player_image(driver,player_id,minio_api_key,minio_pass_key,minio_buck
             break
     try:
         try:
-            client = Minio(endpoint="http://minio_container:9000",access_key=minio_api_key,secret_key=minio_pass_key,secure=False)
+            client = Minio(endpoint="minio:9000",access_key=minio_api_key,secret_key=minio_pass_key,secure=False)
+            print(client)
         except Exception as e:
             print('NO CLIENT ',e)
         object_name = f"{player_id}.png"
         file = io.BytesIO(image_response)
-        client.put_object(minio_bucket, object_name, data=file, length=content_length)
+        print(file)
+        print(minio_bucket,"--------",object_name,"--------",content_length)
+        try:
+            client.put_object(minio_bucket, object_name, data=file, length=content_length)
+            print('Image inserted')
+        except Exception as e:
+            print('Error putting object--- ',e)
+        
     except Exception as e:
         print("Error inserting image into Minio ",e)
 
@@ -309,7 +317,7 @@ def stats_scraper(totals_stats_table,player_id,season,team_name): #return df
 
 
 def navigating_website(ti,**op_kwargs):
-    minio_api_key=op_kwargs['minio_api_key']
+    minio_api_key=op_kwargs['minio_key']
     minio_pass_key=op_kwargs['minio_pass_key']
     minio_bucket=op_kwargs['minio_bucket']
 

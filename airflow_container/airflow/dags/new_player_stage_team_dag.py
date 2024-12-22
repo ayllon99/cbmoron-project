@@ -15,7 +15,7 @@ url_primera=Variable.get(key='url_primera_feb')
 url_segunda=Variable.get(key='url_segunda_feb')
 url_tercera=Variable.get(key='url_tercera_feb')
 
-minio_api_key=Variable.get(key='minio_api_key')
+minio_key=Variable.get(key='minio_key')
 minio_pass_key=Variable.get(key='minio_pass_key')
 minio_bucket=Variable.get(key='minio_bucket')
 
@@ -82,7 +82,7 @@ with DAG(
     player_scraping = PythonOperator(
         task_id="scraping_new_players",
         python_callable=checking_new_players.navigating_website,
-        op_kwargs={'minio_api_key':minio_api_key,'minio_pass_key':minio_pass_key,'minio_bucket':minio_bucket}
+        op_kwargs={'minio_key':minio_key,'minio_pass_key':minio_pass_key,'minio_bucket':minio_bucket}
     )
 
     with TaskGroup("inserting_to_postgres_player",tooltip="Task Group for inserting data into postgres DB") as inserting_data_player:

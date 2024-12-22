@@ -4,10 +4,17 @@ from matplotlib.patches import Circle, Rectangle, Arc, Wedge
 from datetime import datetime
 import matplotlib.image as mpimg
 import psycopg2
+from minio import Minio
+from PIL import Image
+import io
+
 
 
 data_not_found_path="data_not_found.png"
-host='postgres_container'
+#postgres_host='postgres_container'
+#minio_host='minio'
+postgres_host='localhost'
+minio_host='localhost'
 
 
 def draw_court(color="black", lw=1, outer_lines=True, dic_stats=None ,year=None):
@@ -191,7 +198,7 @@ class PlayerStats:
     def connect(self):
         self.conn = psycopg2.connect(
             dbname='cbmoron_database',
-            host=host,
+            host=postgres_host,
             user='root',
             password='root'
         )
@@ -556,5 +563,24 @@ class PlayerStats:
         return df
 
 
+def get_player_image(player_id):
+    api_key="1eTECadkp9l15cVUc3Kc"
+    pass_key="TakZoqqGLlUN82ogGd1lG4AY3qccmNhmeuTpFRYb"
+    client = Minio(endpoint=f"{minio_host}:9000",access_key=api_key,secret_key=pass_key,secure=False)
+    bucket_name = "player-image"
+    object_name = f'{player_id}.png'
+    object_name = "1047173.png" #######################REMOVE
+    response = client.get_object(bucket_name, object_name)
+    image_data = response.read()
+    image_stream = io.BytesIO(image_data)
+    image = Image.open(image_stream)
+    width, height = image.size
+    height_limit=250
+    if height!=height_limit:
+        prop=round(height/width,2)
+        height=height_limit
+        width=round(height/prop,0)
+        print("inside",height,width)
+    return image_data,width, height
 
 
