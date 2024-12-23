@@ -361,17 +361,7 @@ def navigating_website(ti,**op_kwargs):
             ti.xcom_push(key=f'{player_id}_players_info',value=player_info)
             ti.xcom_push(key=f'{player_id}_players_career_path',value=career_path)
             ti.xcom_push(key=f'{player_id}_players_stats_career',value=stats)
-        except:
-            print(f'Error scraping {player_id}, {link}')    
+        except Exception as e:
+            print(f'Error scraping {player_id}, {link}, {e}')    
     driver.quit()
         
-
-
-
-
-
-
-
-
-
-

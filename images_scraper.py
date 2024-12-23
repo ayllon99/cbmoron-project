@@ -29,12 +29,18 @@ client = Minio(endpoint="localhost:9000",access_key=api_key,secret_key=pass_key,
 bucket_name = "player-image"
 
 players_done=[int(obj.object_name.replace('.png','')) for obj in client.list_objects(bucket_name)]
-df=df[~df['player_id'].isin(players_done)]
+errors=[int(obj.object_name.replace('.txt','')) for obj in client.list_objects("errors")]
+done=players_done+errors
+len(players_done)
+len(errors)
+len(done)
+df=df[~df['player_id'].isin(done)]
+left=len(df)
 
 driver = webdriver.Chrome()
 
 for index,row in df.iterrows():
-    print(row['player_id'])
+    print('player_id in progress: ',row['player_id'])
 
     player_id=row['player_id']
     url=row['player_link']
@@ -55,3 +61,5 @@ for index,row in df.iterrows():
         data = b''
         data_stream = io.BytesIO(data)
         client.put_object('errors', object_name,data=data_stream,length=len(data))
+    left=left-1
+    print('images left: ',left)
