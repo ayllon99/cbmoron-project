@@ -17,14 +17,17 @@ def fuzzy_search(my_list, target, threshold=50):
 
 
 def name_scraper(state):
-    input=state.value
-    print(input)
-    results=fuzzy_search(list_of_players_total,input)
-    print(results)
-    if len(results)>0:
-        state.list_of_players=[result[0].upper() for result in results]
-    else:
-        state.list_of_players=['No players','with that','name']
+    try:
+        input=state.value
+        print(input)
+        results=fuzzy_search(list_of_players_total,input)
+        #print(results)
+        if len(results)>0:
+            state.list_of_players=[result[0].upper() for result in results]
+        else:
+            state.list_of_players=['No players','with that','name']
+    except:
+        print('Error in name_scraper')
 
 
 def proccess_column_weighted(stat,n_matches):
@@ -92,24 +95,27 @@ def proccess_df_total(df):
 
 
 def create_fig(df,stat,stat_mode):
-    if len(stat)>1:
-        stats=', '.join([f'{col}' for col in stat])
-    else:
-        stats=stat[0]
-    title=f'{stats} IN {stat_mode} BY SEASON'
-    print(title)
-    title=title.upper()
-    if stat_mode == 'AVERAGE':
-        dff = proccess_df_avg(df)
-    elif stat_mode == 'TOTAL':
-        dff = proccess_df_total(df)
+    try:
+        if len(stat)>1:
+            stats=', '.join([f'{col}' for col in stat])
+        else:
+            stats=stat[0]
+        title=f'{stats} IN {stat_mode} BY SEASON'
+        #print(title)
+        title=title.upper()
+        if stat_mode == 'AVERAGE':
+            dff = proccess_df_avg(df)
+        elif stat_mode == 'TOTAL':
+            dff = proccess_df_total(df)
 
-    dff=dff.reset_index()
-    dff=dff.sort_values("SEASON")
-    if len(dff)>1:
-        fig = px.line(data_frame=dff,x='SEASON', y=stat, title=title)
-    else:
-        fig = px.bar(data_frame=dff,x='SEASON', y=stat, title=title)
+        dff=dff.reset_index()
+        dff=dff.sort_values("SEASON")
+        if len(dff)>1:
+            fig = px.line(data_frame=dff,x='SEASON', y=stat, title=title)
+        else:
+            fig = px.bar(data_frame=dff,x='SEASON', y=stat, title=title)
+    except:
+        print('Error in create_fig')
     return fig
 
 
@@ -170,88 +176,129 @@ stat=['POINTS']
 figg = create_fig(player_stats_table,['POINTS'],'AVERAGE')
 
 
-def new_player(state,id,payload):
-    
+def menu_clicked(state,id,payload):
     player_id = list_of_players_dict[payload['args'][0]]
-    state.player_id=player_id
-    player_stats = analysis.PlayerStats(player_id)
-    state.value = None
+    new_player(state,player_id)
 
-    player_info=player_stats.info_query()
-    player_path=player_stats.path()
-    player_image,player_image_width,player_image_height=analysis.get_player_image(player_id)
-    state.player_path=player_path
-    state.name=player_info['player_name']
-    state.player_image_height=f"{player_image_height}px"
-    state.player_image_width=f"{player_image_width}px"
-    state.player_image=player_image
-    state.age=player_info['age']
-
+def new_player(state,player_id):
     try:
-        state.last_season=player_path.loc[0].SEASON
-        state.last_league=player_path.loc[0].LEAGUE
-    except:
-        print('Error getting SEASON or LEAGUE')
+        state.player_id=player_id
+        player_stats = analysis.PlayerStats(player_id)
+        state.value = None
 
-    state.position=player_info['position']
-    state.nationality=player_info['nationality']
+        player_info=player_stats.info_query()
+        player_path=player_stats.path()
+        player_image,player_image_width,player_image_height=analysis.get_player_image(player_id)
+        state.player_path=player_path
+        state.name=player_info['player_name']
+        state.player_image_height=f"{player_image_height}px"
+        state.player_image_width=f"{player_image_width}px"
+        state.player_image=player_image
+        state.age=player_info['age']
 
-    stats, years = player_stats.get_shooting_stats()
-    images=[]
-    for year in years:
-        fig=analysis.draw_court(dic_stats=stats,year=year)
-        buf = io.BytesIO()
-        fig.savefig(buf, format='png')
-        buf.seek(0)
-        images.append(buf)
-    final_images=[]
-    for i, image_buffer in enumerate(images):
-        final_images.append(image_buffer.getvalue())
-        image_buffer.seek(0)
-    state.image_1=final_images[0]
-    state.image_2=final_images[1]
-    state.image_3=final_images[2]
-    state.stat_mode='AVERAGE'
-    player_stats_table=player_stats.stats_avg_table()
-    state.stats_columns=list(player_stats_table.columns)
-    state.player_stats_table=player_stats_table
+        try:
+            state.last_season=player_path.loc[0].SEASON
+            state.last_league=player_path.loc[0].LEAGUE
+        except:
+            print('Error getting SEASON or LEAGUE')
 
-    #Chart
-    state.stat=['POINTS']
-    print('player_id passed is:',player_id)
-    on_mode(state)
+        state.position=player_info['position']
+        state.nationality=player_info['nationality']
+
+        stats, years = player_stats.get_shooting_stats()
+        
+        images=[]
+        for year in years:
+            fig=analysis.draw_court(dic_stats=stats,year=year)
+            buf = io.BytesIO()
+            fig.savefig(buf, format='png')
+            buf.seek(0)
+            images.append(buf)
+        final_images=[]
+        for i, image_buffer in enumerate(images):
+            final_images.append(image_buffer.getvalue())
+            image_buffer.seek(0)
+        state.image_1=final_images[0]
+        state.image_2=final_images[1]
+        state.image_3=final_images[2]
+        state.stat_mode='AVERAGE'
+        player_stats_table=player_stats.stats_avg_table()
+        state.stats_columns=list(player_stats_table.columns)
+        state.player_stats_table=player_stats_table
+
+        #Chart
+        state.stat=['POINTS']
+        #print('player_id passed is:',player_id)
+        on_mode(state)
+    except Exception as e:
+        print('Error in new_player---- ',e)
+        notify(state=state,message='ERROR IN THIS PLAYER')
 
 
 def on_mode(state):
-    player_id=state.player_id
-    player_stats = analysis.PlayerStats(player_id)
-    mode=state.stat_mode
-    print(mode)
-    if mode=='AVERAGE':
-        table=player_stats.stats_avg_table()
-        state.player_stats_table=table
-        
-    elif mode=='TOTAL':
-        table=player_stats.stats_total_table()
-        state.player_stats_table=table
-    on_selector(state)
+    try:
+        player_id=state.player_id
+        player_stats = analysis.PlayerStats(player_id)
+        mode=state.stat_mode
+        #print(mode)
+        if mode=='AVERAGE':
+            table=player_stats.stats_avg_table()
+            state.player_stats_table=table
+            
+        elif mode=='TOTAL':
+            table=player_stats.stats_total_table()
+            state.player_stats_table=table
+        on_selector(state)
+    except:
+        print('Error in on_mode')
 
 
 def on_selector(state):
-    column=state.stat
-    mode=state.stat_mode
-    print('printing-----------',state.stat)
-    df=state.player_stats_table
-    state.figg = create_fig(df,column,mode)
+    try:
+        column=state.stat
+        mode=state.stat_mode
+        #print('printing-----------',state.stat)
+        df=state.player_stats_table
+        state.figg = create_fig(df,column,mode)
+    except:
+        print('Error in on_selector')
 
 
 def submit_stats(state):
-    print('clicked')
+    print("clicked_second")
+    season=state.season
+    n_matches=state.n_matches
+    min_avg=state.min_avg
+    points_avg=state.points_avg
+    twos_in_avg=state.twos_in_avg
+    twos_tried_avg=state.twos_tried_avg
+    twos_perc=state.twos_perc
+    threes_in_avg=state.threes_in_avg
+    threes_tried_avg=state.threes_tried_avg
+    threes_perc=state.threes_perc
+    field_goals_in_avg=state.field_goals_in_avg
+    field_goals_tried_avg=state.field_goals_tried_avg
+    field_goals_perc=state.field_goals_perc
+    free_throws_in_avg=state.free_throws_in_avg
+    free_throws_tried_avg=state.free_throws_tried_avg
+    free_throws_perc=state.free_throws_perc
+    offensive_rebounds_avg=state.offensive_rebounds_avg
+    deffensive_rebounds_avg=state.deffensive_rebounds_avg
+    total_rebounds_avg=state.total_rebounds_avg
+    assists_avg=state.assists_avg
+    turnovers_avg=state.turnovers_avg
+    blocks_favor_avg=state.blocks_favor_avg
+    blocks_against_avg=state.blocks_against_avg
+    dunks_avg=state.dunks_avg
+    personal_fouls_avg=state.personal_fouls_avg
+    fouls_received_avg=state.fouls_received_avg
+    efficiency_avg=state.efficiency_avg
+    print(season,n_matches,min_avg,points_avg,twos_in_avg,twos_tried_avg,twos_perc,threes_in_avg,threes_tried_avg,threes_perc,field_goals_in_avg,field_goals_tried_avg,field_goals_perc,free_throws_in_avg,free_throws_tried_avg,free_throws_perc,offensive_rebounds_avg,deffensive_rebounds_avg,total_rebounds_avg,assists_avg,turnovers_avg,blocks_favor_avg,blocks_against_avg,dunks_avg,personal_fouls_avg,fouls_received_avg,efficiency_avg)
+
+
 
 
 season=None
-team_name_extended=None
-stage_name_extended=None
 n_matches=None
 min_avg=None
 points_avg=None
@@ -280,6 +327,60 @@ fouls_received_avg=None
 efficiency_avg=None
 
 
+league_selected='ORO'
+leagues_list=['ORO','PLATA','EBA']
+
+season_selected=None
+seasons_list=['2023/24', '2022/23', '2021/22', '2020/21', '2019/20', '2018/19', '2017/18', '2016/17', '2015/16']
+
+team_ids_dict=''
+player_ids_dict=''
+
+team_selected=None
+teams_list=[]
+
+player_id_selected=None
+player_selected=None
+players_list=[]
+
+def league_function(state):
+    state.players_list=[]
+    state.teams_list=[]
+    state.player_selected=None
+    state.team_selected=None
+    state.season_selected=None
+
+def season_function(state):
+    state.teams_list=[]
+    searching=analysis.search_player()
+    league=state.league_selected
+    season=state.season_selected[2:]
+    print('league: ',league,', season: ',season)
+    team_ids_dict,teams_list=searching.on_change_season(league=league,season=season)
+    #print(teams_list)
+    state.team_ids_dict=team_ids_dict
+    state.teams_list=teams_list
+    
+def team_function(state):
+    searching=analysis.search_player()
+    team_ids_dict=dict(dict(state.team_ids_dict)['team_id'])
+    team_selected=state.team_selected
+    team_id=team_ids_dict[team_selected]
+    player_ids_dict,players_list=searching.on_change_team(team_id)
+    state.players_list=players_list
+    state.player_ids_dict=player_ids_dict
+
+def player_function(state):
+    player_name=state.player_selected
+    player_ids_dict=dict(dict(state.player_ids_dict)['player_id'])
+    player_id=player_ids_dict[player_name]
+    state.player_id_selected=player_id
+    print(player_id)
+
+def submit_player(state):
+    player_id=state.player_id_selected
+    new_player(state,player_id)
+
 
 with tgb.Page() as root_page:
     tgb.navbar(class_name='m-auto')
@@ -288,17 +389,55 @@ with tgb.Page() as root_page:
 with tgb.Page() as player_analysis:
     tgb.text(' ',mode='pre')
     tgb.text('{player_id}',mode='pre',class_name='d-none')
+    tgb.text('{player_id_selected}',mode='pre',class_name='d-none')
     tgb.text("Player analysis",class_name="h1 text-center")
-    tgb.text(' ',mode='pre')
-    tgb.text('Use the searcher bar to type the name of the player and select the player in the left menu',mode='pre',class_name='text-center')
-    with tgb.layout(1):
+    #tgb.text(' ',mode='pre')
+    #tgb.text('Use the searcher bar to type the name of the player and select the player in the left menu',mode='pre',class_name='text-center')
+    """with tgb.layout(1):
         with tgb.layout(class_name='d-inline-block m-auto'):
             with tgb.part(class_name='d-inline-block m-auto d-flex justify-content-center'):
                 tgb.input('{value}',type='search',label='Player name',class_name='d-inline',on_change=name_scraper,change_delay=10)
-            """with tgb.part(class_name='d-inline-block m-auto d-flex justify-content-center'):
-                tgb.button('Select')"""
             with tgb.part(class_name='d-inline-block m-auto d-flex justify-content-center'):
-                tgb.menu('{list_of_players}',on_action=new_player)
+                tgb.menu('{list_of_players}',on_action=new_player)"""
+    tgb.text('{team_ids_dict}',mode='pre',class_name='d-none')
+    tgb.text('{player_ids_dict}',mode='pre',class_name='d-none')
+    tgb.text(' ', mode='pre')
+    with tgb.layout("1 1 1 1"):
+        with tgb.part():
+            tgb.selector(value='{league_selected}',lov='{leagues_list}',
+                    dropdown=True,
+                    multiple=False,
+                    mode='selector',
+                    label="Select league",
+                    class_name="fullwidth",
+                    on_change=league_function)
+        with tgb.part():
+            tgb.selector(value='{season_selected}',lov='{seasons_list}',
+                    dropdown=True,
+                    multiple=False,
+                    mode='selector',
+                    label="Select year",
+                    class_name="fullwidth",
+                    on_change=season_function)
+        with tgb.part():
+            tgb.selector(value='{team_selected}',lov='{teams_list}',
+                    dropdown=True,
+                    multiple=False,
+                    mode='selector',
+                    label="Select team",
+                    class_name="fullwidth",
+                    on_change=team_function)
+        with tgb.part():
+            tgb.selector(value='{player_selected}',lov='{players_list}',
+                    dropdown=True,
+                    multiple=False,
+                    mode='selector',
+                    label="Select player",
+                    class_name="fullwidth",
+                    on_change=player_function)
+    with tgb.layout("1"):
+        with tgb.part(class_name='m-auto'):
+            tgb.button("Submit", on_action=submit_player)
     tgb.text(' ',mode='pre')
     with tgb.layout("1 1 1"):
         with tgb.part(class_name='m-auto'):
@@ -358,20 +497,56 @@ with tgb.Page() as player_analysis:
 
 
 with tgb.Page() as second:
+    
     tgb.text(' ',mode='pre')
     tgb.text("Player scraper",class_name="h1 text-center")
+    tgb.text('{team_ids_dict}',mode='pre',class_name='d-none')
+    tgb.text('{player_ids_dict}',mode='pre',class_name='d-none')
+    tgb.text(' ', mode='pre')
+    with tgb.layout("1 1 1 1"):
+        with tgb.part():
+            tgb.selector(value='{league_selected}',lov='{leagues_list}',
+                    dropdown=True,
+                    multiple=False,
+                    mode='selector',
+                    label="Select league",
+                    class_name="fullwidth",
+                    on_change=league_function)
+        with tgb.part():
+            tgb.selector(value='{season_selected}',lov='{seasons_list}',
+                    dropdown=True,
+                    multiple=False,
+                    mode='selector',
+                    label="Select year",
+                    class_name="fullwidth",
+                    on_change=season_function)
+        with tgb.part():
+            tgb.selector(value='{team_selected}',lov='{teams_list}',
+                    dropdown=True,
+                    multiple=False,
+                    mode='selector',
+                    label="Select team",
+                    class_name="fullwidth",
+                    on_change=team_function)
+        with tgb.part():
+            tgb.selector(value='{player_selected}',lov='{players_list}',
+                    dropdown=True,
+                    multiple=False,
+                    mode='selector',
+                    label="Select player",
+                    class_name="fullwidth",
+                    on_change=player_function)
     tgb.text(' ', mode='pre')
     tgb.text("Enter player stats:", class_name="h3 text-center")
+    tgb.text(' ', mode='pre')
+    with tgb.layout("1"):
+        with tgb.part(class_name='m-auto'):
+            tgb.button("Submit", on_action=submit_stats)
+    tgb.text(' ', mode='pre')
     with tgb.layout("1 1 1 1 1 1"):
         with tgb.part():
             tgb.text("Season:")
             tgb.input("{season}", type="text", class_name="form-control")
-        with tgb.part():
-            tgb.text("Team name extended:")
-            tgb.input("{team_name_extended}", type="text", class_name="form-control")
-        with tgb.part():
-            tgb.text("Stage name extended:")
-            tgb.input("{stage_name_extended}", type="text", class_name="form-control")
         with tgb.part():
             tgb.text("N matches:")
             tgb.input("{n_matches}", type="number", class_name="form-control")
@@ -450,8 +625,7 @@ with tgb.Page() as second:
         with tgb.part():
             tgb.text("Efficiency avg:")
             tgb.input("{efficiency_avg}", type="number", class_name="form-control")
-        with tgb.part():
-            tgb.button("Submit", on_click=submit_stats)
+        
 
 pages = {
     "/": root_page,

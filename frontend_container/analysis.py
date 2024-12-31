@@ -9,8 +9,8 @@ from PIL import Image
 import io
 
 
-
-data_not_found_path="data_not_found.png"
+data_not_found_path="frontend_container/data_not_found.png"
+image_not_found_path="frontend_container/image_not_found.png"
 #postgres_host='postgres_container'
 #minio_host='minio'
 postgres_host='localhost'
@@ -188,6 +188,63 @@ def draw_court(color="black", lw=1, outer_lines=True, dic_stats=None ,year=None)
         
     return fig
 
+class search_player:
+    def __init__(self):
+        self.conn = None
+        self.cur = None
+
+    def connect(self):
+        self.conn = psycopg2.connect(
+            dbname='cbmoron_database',
+            host=postgres_host,
+            user='root',
+            password='root'
+        )
+        self.cur = self.conn.cursor()
+    def close_connection(self):
+        self.cur.close()
+        self.conn.close()
+
+
+    def on_change_season(self,league,season):
+        self.connect()
+        if league == 'ORO':
+            league = 'LEB ORO'
+        elif league == 'PLATA':
+            league = 'LEB PLATA'
+        elif league == 'EBA':
+            league = 'LIGA EBA'
+        params=[league,season]
+        self.cur.execute( """SELECT DISTINCT team_id,team_name,season
+                            FROM public.players_career_path
+                            WHERE league = %s AND season = %s
+                            """,params)
+        df = pd.DataFrame(self.cur.fetchall())
+        #print(df)
+        df.columns=['team_id','team_name','season']
+        teams_list=df['team_name'].tolist()
+        df.set_index('team_name',inplace=True)
+        ids_dict=df.to_dict()
+        teams_list.sort()
+        self.close_connection()
+        return ids_dict,teams_list
+    
+    def on_change_team(self,team_id):
+        self.connect()
+        params=[team_id]
+        self.cur.execute( """SELECT DISTINCT players_info.player_id,players_info.player_name
+                            FROM public.players_matches_stats AS stats
+                            LEFT JOIN players_info ON players_info.player_id = stats.player_id
+                            WHERE stats.team_id = %s AND players_info.player_name IS NOT NULL
+                            """,params)
+        df = pd.DataFrame(self.cur.fetchall())
+        df.columns=['player_id','player_name']
+        
+        names_list=df['player_name'].to_list()
+        df.set_index('player_name',inplace=True)
+        player_ids_dict=df.to_dict()
+        self.close_connection()
+        return player_ids_dict,names_list
 
 class PlayerStats:
     def __init__(self, player_id):
@@ -569,18 +626,27 @@ def get_player_image(player_id):
     client = Minio(endpoint=f"{minio_host}:9000",access_key=api_key,secret_key=pass_key,secure=False)
     bucket_name = "player-image"
     object_name = f'{player_id}.png'
-    object_name = "1047173.png" #######################REMOVE
-    response = client.get_object(bucket_name, object_name)
-    image_data = response.read()
-    image_stream = io.BytesIO(image_data)
-    image = Image.open(image_stream)
-    width, height = image.size
-    height_limit=250
-    if height!=height_limit:
-        prop=round(height/width,2)
-        height=height_limit
-        width=round(height/prop,0)
-        print("inside",height,width)
+    #object_name = "1048199.png" 
+    try:
+        response = client.get_object(bucket_name, object_name)
+        image_data = response.read()
+        print(response.status)
+        image_stream = io.BytesIO(image_data)
+        image = Image.open(image_stream)
+        width, height = image.size
+        height_limit=250
+        if height!=height_limit:
+            prop=round(height/width,2)
+            height=height_limit
+            width=round(height/prop,0)
+    except:
+        print('IMAGE NNOT FOUNDDD')
+        with open(image_not_found_path, 'rb') as f:
+            image_data = f.read()
+        image_stream = io.BytesIO(image_data)
+        image = Image.open(image_stream)
+        width, height = image.size
+
     return image_data,width, height
 
 
