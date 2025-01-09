@@ -11,47 +11,47 @@ import new_player_stage_team.checking_new_stages as checking_new_stages
 import new_player_stage_team.checking_new_teams as checking_new_teams
 
 
-url_primera=Variable.get(key='url_primera_feb')
-url_segunda=Variable.get(key='url_segunda_feb')
-url_tercera=Variable.get(key='url_tercera_feb')
+url_primera = Variable.get(key='url_primera_feb')
+url_segunda = Variable.get(key='url_segunda_feb')
+url_tercera = Variable.get(key='url_tercera_feb')
 
-minio_key=Variable.get(key='minio_key')
-minio_pass_key=Variable.get(key='minio_pass_key')
-minio_bucket=Variable.get(key='minio_bucket')
+minio_key = Variable.get(key='minio_key')
+minio_pass_key = Variable.get(key='minio_pass_key')
+minio_bucket = Variable.get(key='minio_bucket')
 
-postgres_connection='cbmoron_dev'
+postgres_connection = 'cbmoron_dev'
 
 
 def trigger_evaluator_player(ti):
-    result=ti.xcom_pull(task_ids='read_db_player')
-    #print(result)
+    result = ti.xcom_pull(task_ids='read_db_player')
+    # print(result)
     print('---')
     print(result[0])
-    if result==[]:
+    if result == []:
         print('Result == False here the exception comes')
-        raise AirflowFailException('---------------NO NEW PLAYERS IN THE DATABASE---------------')
+        raise AirflowFailException('-----NO NEW PLAYERS IN THE DATABASE-----')
     print('New players in the database, scraping player data...')
 
 
 def trigger_evaluator_stage(ti):
-    result=ti.xcom_pull(task_ids='read_db_stages')
-    #print(result)
+    result = ti.xcom_pull(task_ids='read_db_stages')
+    # print(result)
     print('---')
     print(result[0])
-    if result==[]:
+    if result == []:
         print('Result == False here the exception comes')
-        raise AirflowFailException('---------------NO NEW STAGES IN THE DATABASE---------------')
+        raise AirflowFailException('-----NO NEW STAGES IN THE DATABASE-----')
     print('New stage in the database, scraping stages data...')
 
 
 def trigger_evaluator_team(ti):
-    result=ti.xcom_pull(task_ids='read_db_teams')
-    #print(result)
+    result = ti.xcom_pull(task_ids='read_db_teams')
+    # print(result)
     print('---')
     print(result[0])
-    if result==[]:
+    if result == []:
         print('Result == False here the exception comes')
-        raise AirflowFailException('---------------NO NEW TEAMS IN THE DATABASE---------------')
+        raise AirflowFailException('-----NO NEW TEAMS IN THE DATABASE-----')
     print('New team in the database, scraping teams data...')
 
 
@@ -69,7 +69,9 @@ with DAG(
     read_db_player = SQLExecuteQueryOperator(
             task_id="read_db_player",
             conn_id=postgres_connection,
-            sql="SELECT player_id,player_link FROM players_info WHERE player_name IS NULL",
+            sql="""SELECT player_id,player_link
+                   FROM players_info
+                   WHERE player_name IS NULL""",
             autocommit=True,
             show_return_value_in_logs=True
         )
@@ -82,27 +84,31 @@ with DAG(
     player_scraping = PythonOperator(
         task_id="scraping_new_players",
         python_callable=checking_new_players.navigating_website,
-        op_kwargs={'minio_key':minio_key,'minio_pass_key':minio_pass_key,'minio_bucket':minio_bucket}
+        op_kwargs={'minio_key': minio_key,
+                   'minio_pass_key': minio_pass_key,
+                   'minio_bucket': minio_bucket}
     )
 
-    with TaskGroup("inserting_to_postgres_player",tooltip="Task Group for inserting data into postgres DB") as inserting_data_player:
+    with TaskGroup("inserting_to_postgres_player",
+                   tooltip="""Task Group for inserting
+                   data into postgres DB""") as inserting_data_player:
 
         inserting_players_info = PythonOperator(
             task_id="inserting_players_info",
             python_callable=inserting_new_players.inserting_players_info,
-            op_kwargs={'postgres_connection':postgres_connection}
+            op_kwargs={'postgres_connection': postgres_connection}
         )
 
         inserting_player_career_path = PythonOperator(
             task_id="inserting_player_career_path",
             python_callable=inserting_new_players.inserting_players_career_path,
-            op_kwargs={'postgres_connection':postgres_connection}
+            op_kwargs={'postgres_connection': postgres_connection}
         )
 
         inserting_player_stats_career = PythonOperator(
             task_id="inserting_player_stats_career",
             python_callable=inserting_new_players.inserting_players_stats_career,
-            op_kwargs={'postgres_connection':postgres_connection}
+            op_kwargs={'postgres_connection': postgres_connection}
         )
 
         inserting_players_info >> inserting_player_career_path
@@ -125,15 +131,16 @@ with DAG(
     stage_scraping = PythonOperator(
         task_id="scraping_new_stages",
         python_callable=checking_new_stages.navigating_website,
-        op_kwargs={'url_primera':url_primera,'url_segunda':url_segunda,'url_tercera':url_tercera}
+        op_kwargs={'url_primera': url_primera,
+                   'url_segunda': url_segunda,
+                   'url_tercera': url_tercera}
     )
 
     inserting_stages = PythonOperator(
                 task_id="inserting_stages",
                 python_callable=checking_new_stages.inserting_stages,
-                op_kwargs={'postgres_connection':postgres_connection}
+                op_kwargs={'postgres_connection': postgres_connection}
     )
-
 
     read_db_teams = SQLExecuteQueryOperator(
             task_id="read_db_teams",
@@ -152,20 +159,18 @@ with DAG(
     team_scraping = PythonOperator(
         task_id="scraping_new_teams",
         python_callable=checking_new_teams.navigating_website,
-        op_kwargs={'url_primera':url_primera,'url_segunda':url_segunda,'url_tercera':url_tercera}
+        op_kwargs={'url_primera': url_primera,
+                   'url_segunda': url_segunda,
+                   'url_tercera': url_tercera}
     )
 
     inserting_teams = PythonOperator(
                 task_id="inserting_teams",
                 python_callable=checking_new_teams.inserting_teams,
-                op_kwargs={'postgres_connection':postgres_connection}
+                op_kwargs={'postgres_connection': postgres_connection}
     )
 
-
-    """    read_db_player >> should_trigger_player >> player_scraping >> inserting_data_player
-    read_db_stages >> should_trigger_stage >> stage_scraping >> inserting_stages
-    read_db_teams >> should_trigger_team >> team_scraping >> inserting_teams
-    """    
+    
     read_db_player >> should_trigger_player >> player_scraping >> inserting_data_player >> should_trigger_stage
     read_db_stages >> should_trigger_stage >> stage_scraping >> inserting_stages >> should_trigger_team
     read_db_teams >> should_trigger_team >> team_scraping >> inserting_teams
