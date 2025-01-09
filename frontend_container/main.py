@@ -1,4 +1,4 @@
-from taipy.gui import Gui,notify
+from taipy.gui import Gui, notify
 import plotly.express as px
 import taipy.gui.builder as tgb
 import io
@@ -352,7 +352,7 @@ def league_function(state):
 
 def season_function(state):
     state.teams_list=[]
-    searching=analysis.search_player()
+    searching=analysis.SearchPlayer()
     league=state.league_selected
     season=state.season_selected[2:]
     print('league: ',league,', season: ',season)
@@ -362,7 +362,7 @@ def season_function(state):
     state.teams_list=teams_list
     
 def team_function(state):
-    searching=analysis.search_player()
+    searching=analysis.SearchPlayer()
     team_ids_dict=dict(dict(state.team_ids_dict)['team_id'])
     team_selected=state.team_selected
     team_id=team_ids_dict[team_selected]
@@ -493,7 +493,9 @@ with tgb.Page() as player_analysis:
                     label="Select stat",
                     class_name="fullwidth",
                     on_change=on_selector)
-        tgb.chart(figure="{figg}",class_name='fullwidth')
+    with tgb.layout("1"):
+        with tgb.part():
+            tgb.chart(figure="{figg}",class_name='fullwidth')
 
 
 with tgb.Page() as second:
@@ -632,6 +634,7 @@ pages = {
     "home": player_analysis,
     "about": second
 }
+
 
 gui = Gui(pages=pages)
 gui.run(title='Player analysis',port=5000)
