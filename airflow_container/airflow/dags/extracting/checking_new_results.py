@@ -1,13 +1,9 @@
 from bs4 import BeautifulSoup as bs
 import time
 from selenium.webdriver.common.by import By
-from seleniumwire import webdriver
 import json
 from datetime import datetime, timedelta
-
-# from selenium import webdriver
-# driver=webdriver.Chrome()
-# url="https://baloncestoenvivo.feb.es/resultados/segundafeb/2/2024"
+from utils import browser
 
 
 def check_page(driver, match_day):
@@ -35,28 +31,6 @@ def check_page(driver, match_day):
         return False
 
 
-def open_browser():
-    # Address of the machine running Selenium Wire.
-    # Explicitly use 127.0.0.1 rather than localhost
-    # if remote session is running locally.
-    sw_options = {
-        'addr': '0.0.0.0',
-        'auto_config': False,
-        'port': 35813
-        }
-
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument('--proxy-server=airflow-container:35813')
-    chrome_options.add_argument('--ignore-certificate-errors')
-
-    driver = webdriver.Remote(
-        command_executor="http://selenium-hub:4444",
-        options=chrome_options,
-        seleniumwire_options=sw_options
-        )
-    return driver
-
-
 def check_new_stages(driver, dates_left, url):
     driver.get(url)
     time.sleep(3)
@@ -82,7 +56,7 @@ def check_new_stages(driver, dates_left, url):
 def new_results(ti, **op_kwargs):
     url = op_kwargs['url']
     file_path = op_kwargs['file_path']
-    driver = open_browser()
+    driver = browser.open_browser()
     with open(file_path, 'r') as file:
         a = file.read()
         a = a.replace("'", '"')

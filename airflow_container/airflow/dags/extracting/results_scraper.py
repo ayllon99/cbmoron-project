@@ -1,16 +1,14 @@
 import pandas as pd
 from bs4 import BeautifulSoup as bs
 import time
-from selenium import webdriver
 from datetime import datetime
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 import pandas as pd
 from bs4 import BeautifulSoup as bs
 import time
 from selenium.webdriver.common.by import By
-from seleniumwire import webdriver
 from datetime import datetime
-from airflow.models import Variable
+from utils import browser
 
 
 teams_link = 'https://baloncestoenvivo.feb.es/Equipo.aspx?i='
@@ -120,33 +118,11 @@ def inserting_to_postgres(ti, **op_kwargs):
             ).execute(params)
 
 
-def open_browser():
-    # Address of the machine running Selenium Wire.
-    # Explicitly use 127.0.0.1 rather than localhost
-    # if remote session is running locally.
-    sw_options = {
-        'addr': '0.0.0.0',
-        'auto_config': False,
-        'port': 35813
-    }
-
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument('--proxy-server=airflow-container:35813')
-    chrome_options.add_argument('--ignore-certificate-errors')
-
-    driver = webdriver.Remote(
-        command_executor="http://selenium-hub:4444",
-        options=chrome_options,
-        seleniumwire_options=sw_options
-    )
-    return driver
-
-
 def results_scraper(ti, **op_kwargs):
     url = op_kwargs["url"]
     category = op_kwargs["category"]
 
-    driver = open_browser()
+    driver = browser.open_browser()
     time.sleep(1)
 
     driver.get(url)
