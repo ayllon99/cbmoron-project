@@ -1,0 +1,6 @@
+*.py
+*.txt
+*.env
+*.png
+*.yml
+*.pyc
