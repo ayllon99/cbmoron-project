@@ -1,108 +1,6 @@
 from taipy.gui import Gui
 import taipy.gui.builder as tgb
-from utils.analysis import *
-from utils.scraper import *
-from utils.show_data import *
-from utils.shootings import *
-
-
-# Player Scraper default ------------------------------------------------------
-season_scraping = "2023/24"
-league_scraping = "LEB ORO"
-n_matches = None
-min_avg = None
-points_avg = None
-twos_in_avg = None
-twos_tried_avg = None
-twos_perc = None
-threes_in_avg = None
-threes_tried_avg = None
-threes_perc = None
-field_goals_in_avg = None
-field_goals_tried_avg = None
-field_goals_perc = None
-free_throws_in_avg = None
-free_throws_tried_avg = None
-free_throws_perc = None
-offensive_rebounds_avg = None
-deffensive_rebounds_avg = None
-total_rebounds_avg = None
-assists_avg = None
-turnovers_avg = None
-blocks_favor_avg = None
-blocks_against_avg = None
-dunks_avg = None
-personal_fouls_avg = None
-fouls_received_avg = None
-efficiency_avg = None
-
-stats_dict = {
-        "n_matches": 15,
-        'min_avg': 12,
-        "points_avg": 12,
-        "twos_in_avg": 1,
-        "twos_tried_avg": 5}
-
-where_clause, league_clause, params = create_query(stats_dict,
-                                                           season_scraping[2:],
-                                                           league_scraping)
-player_scraper = PlayerScraper()
-players_scraped = player_scraper.querying(where_clause, league_clause, params)
-
-# Lists used in Scraper AND Analysis ------------------------------------------
-leagues_list = ['LEB ORO', 'LEB PLATA', 'LIGA EBA']
-seasons_list = ['2023/24', '2022/23', '2021/22', '2020/21', '2019/20',
-                '2018/19', '2017/18', '2016/17', '2015/16']
-
-# Player Analysis default -----------------------------------------------------
-league_analysis = 'LEB ORO'
-season_analysis = None
-team_analysis = None
-player_analysis = None
-player_id_selected = None
-teams_list = []
-players_list = []
-
-# Empty by default
-team_ids_dict = ''
-player_ids_dict = ''
-
-# Player Analysis by default = Marc Gasol -------------------------------------
-# Marc Gasol id
-player_id = 360978
-player_stats = PlayerStats(player_id)
-
-# Personal info + path
-player_info = player_stats.info_query()
-name = player_info['player_name']
-age = player_info['age']
-
-player_path = player_stats.path()
-player_image, player_image_width, player_image_height = get_player_image(player_id)
-
-try:
-    last_season = player_path.loc[0].SEASON
-    last_league = player_path.loc[0].LEAGUE
-except Exception:
-    print('Error in SEASON or LEAGUE')
-position = player_info['position']
-nationality = player_info['nationality']
-
-# Shootings
-image_1, image_2, image_3 = shootings_images(player_stats)
-
-# Table stats
-stat_mode = 'AVERAGE'
-player_stats_table = player_stats.stats_avg_table()
-list_of_stats = list(player_stats_table.columns)
-stats_columns = [x for x in list_of_stats if x not in
-                 ['MIN', 'SEASON', 'TEAM_NAME_EXTENDED',
-                  'STAGE_NAME_EXTENDED']]
-
-# Chart
-# Stat to show by default
-stats_to_show = ['POINTS']
-figg = create_fig(player_stats_table, stats_to_show, stat_mode)
+from utils.setup import *
 
 
 with tgb.Page() as root_page:
@@ -259,7 +157,7 @@ with tgb.Page() as player_by_stat:
         with tgb.part(class_name='m-auto'):
             tgb.button("Clear", on_action=clear_button)
     tgb.text(' ', mode='pre')
-    tgb.text('Click a row to select the player', class_name='h5 text-center')
+    tgb.text('{scraper_instructions}', class_name='h5 text-center')
     tgb.table('{players_scraped}',
               page_size=4,
               on_action=scraper_triggered)
@@ -267,7 +165,6 @@ with tgb.Page() as player_by_stat:
 
 with tgb.Page() as player_by_team:
     tgb.text('{player_id}', mode='pre', class_name='d-none')
-    tgb.text('{player_id_selected}', mode='pre', class_name='d-none')
     tgb.text('{team_ids_dict}', mode='pre', class_name='d-none')
     tgb.text('{player_ids_dict}', mode='pre', class_name='d-none')
     with tgb.layout("1 1 1 1"):
@@ -376,7 +273,7 @@ with tgb.Page() as dashboard:
                      mode='selector',
                      label="Select stat",
                      class_name="fullwidth",
-                     on_change=on_selector)
+                     on_change=on_stats_selector)
     with tgb.layout("1"):
         with tgb.part():
             tgb.chart(figure="{figg}", class_name='fullwidth')
@@ -387,9 +284,10 @@ pages = {
     "dashboard": dashboard,
     "player_by_stat": player_by_stat,
     "player_by_team": player_by_team
-    
+
 }
 
 
 gui = Gui(pages=pages)
-gui.run(title='Player analysis', port=5000, watermark='')
+gui.run(title='Player analysis', port=5000, watermark='',
+        favicon='/images/fav.ico')

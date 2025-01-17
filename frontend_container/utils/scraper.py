@@ -1,6 +1,5 @@
-from datetime import timedelta
-from utils import show_data
-from utils import analysis
+from utils.show_data import new_player
+from utils.analysis import PlayerScraper, SearchPlayer
 from taipy.gui import notify
 
 
@@ -8,9 +7,7 @@ from taipy.gui import notify
 def submit_stats(state):
     notify(state, notification_type='I',
            message='Matching players with those stats or higher')
-    player_scraper = analysis.PlayerScraper()
-    season = state.season_scraping
-    league = state.league_scraping
+    
     stats_dict = {
         'n_matches': state.n_matches,
         'min_avg': state.min_avg,
@@ -40,50 +37,24 @@ def submit_stats(state):
         'efficiency_avg': state.efficiency_avg
     }
 
-    season = season[2:]
-    where_clause, league_clause, params = create_query(stats_dict, season, league)
+    season = state.season_scraping
+    league = state.league_scraping
+
+    player_scraper = PlayerScraper(stats_dict, season, league)
+    
     try:
-        table_scraped = player_scraper.querying(where_clause, league_clause, params)
-        state.players_scraped =table_scraped
+        players_scraped = player_scraper.querying()
+        state.players_scraped = players_scraped
+        state.scraper_instructions = 'Click a row to select the player'
         notify(state, notification_type='success',
            message='Some players found!')
     except:
+        state.scraper_instructions = ''
         notify(state, notification_type='error',
            message='No players with those stats were found')
 
-def create_query(stats_dict, season, league):
-    if stats_dict['min_avg'] is not None:
-        min_avg = int(stats_dict['min_avg'])
-        clause = f"min_avg >= %s AND "
-        min_param = timedelta(hours=0, minutes=min_avg, seconds=0)
-    else:
-        clause = ''
-        min_param = None
-
-    stats_dict = {key: value for key, value in stats_dict.items()
-                  if value is not None and key != 'min_avg'}
-
-    query = " AND ".join(f"{key} >= %s" for key in stats_dict.keys())
-    where_clause = clause + query
-    params = list(stats_dict.values())
-    params.insert(0, season)
-    if where_clause:
-        where_clause = "WHERE " + where_clause
-
-    if min_param is not None:
-        params.insert(1, min_param)
-
-    if league is not None:
-        league_clause = "WHERE pcp.league = %s"
-        params.append(league)
-    else:
-        league_clause = ""
-
-    return where_clause, league_clause, params
-
 
 def clear_button(state):
-    print('clear')
     state.n_matches = None
     state.min_avg = None
     state.points_avg = None
@@ -117,27 +88,27 @@ def scraper_triggered(state, var_name, payload):
     player_id = int(table.loc[payload['index'],'player_id'])
     notify(state, notification_type='I',
            message='Analyzing selected player')
-    show_data.new_player(state, player_id)
+    new_player(state, player_id)
 
 
 #Player Analysis
 def league_function(state):
-    state.players_list = []
     state.teams_list = []
-    state.player_analysis = None
-    state.team_analysis = None
+    state.players_list = []
     state.season_analysis = None
-
+    state.team_analysis = None
+    state.player_analysis = None
+    
 
 def season_function(state):
     state.teams_list = []
-    state.team_analysis = None
     state.players_list = []
+    state.team_analysis = None
     state.player_analysis = None
-    searching = analysis.SearchPlayer()
+    searching = SearchPlayer()
     league = state.league_analysis
     season = state.season_analysis[2:]
-    print('league: ', league, ', season: ', season)
+    
     team_ids_dict, teams_list = searching.on_change_season(league=league,
                                                            season=season)
     state.team_ids_dict = team_ids_dict
@@ -146,7 +117,7 @@ def season_function(state):
 
 def team_function(state):
     state.player_analysis = None
-    searching = analysis.SearchPlayer()
+    searching = SearchPlayer()
     team_ids_dict = dict(dict(state.team_ids_dict)['team_id'])
     team_selected = state.team_analysis
     team_id = team_ids_dict[team_selected]
@@ -159,9 +130,6 @@ def player_function(state):
     player_name = state.player_analysis
     player_ids_dict = dict(dict(state.player_ids_dict)['player_id'])
     player_id = player_ids_dict[player_name]
-    state.player_id_selected = player_id
     notify(state, notification_type='I',
            message='Analyzing selected player')
-    show_data.new_player(state, player_id)
-    print(player_id)
-
+    new_player(state, player_id)
