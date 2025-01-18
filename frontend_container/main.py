@@ -9,6 +9,7 @@ with tgb.Page() as root_page:
 
 
 with tgb.Page() as player_by_stat:
+
     with tgb.layout("1 1 1 1 1 1"):
         with tgb.part(class_name='m-auto text-center'):
             tgb.text("League:", class_name='text-center')
@@ -224,7 +225,7 @@ with tgb.Page() as dashboard:
     with tgb.layout("1 1 1 1 1"):
         with tgb.part():
             tgb.text(f'Age', class_name="h3 text-center text-underline")
-            tgb.text('{age} years old', class_name="h3 text-center")
+            tgb.text('{age}', class_name="h3 text-center")
         with tgb.part():
             tgb.text(f'Last season',
                      class_name="h3 text-center text-underline")
@@ -267,7 +268,7 @@ with tgb.Page() as dashboard:
     tgb.text(' ', mode='pre')
     with tgb.layout("225px 1"):
         tgb.selector(value='{stats_to_show}',
-                     lov=stats_columns,
+                     lov='{stats_columns}',
                      dropdown=True,
                      multiple=True,
                      mode='selector',
@@ -278,16 +279,14 @@ with tgb.Page() as dashboard:
         with tgb.part():
             tgb.chart(figure="{figg}", class_name='fullwidth')
 
-
 pages = {
     "/": root_page,
     "dashboard": dashboard,
     "player_by_stat": player_by_stat,
     "player_by_team": player_by_team
-
-}
-
+    }
 
 gui = Gui(pages=pages)
+gui.on_init = init
 gui.run(title='Player analysis', port=5000, watermark='',
         favicon='/images/fav.ico')

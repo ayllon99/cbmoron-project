@@ -1,11 +1,52 @@
 import pandas as pd
 
 
-def new_col(stat, n_matches):
+def new_col(stat: pd.Series, n_matches: pd.Series) -> float:
+    """
+    Calculate the weighted average of a statistic.
+
+    Parameters
+    ----------
+    stat : pandas.Series
+        The statistic to calculate the weighted average for.
+    n_matches : pandas.Series
+        The number of matches for each row in the statistic series.
+
+    Returns
+    -------
+    float
+        The weighted average of the statistic.
+
+    Notes
+    -----
+    The weighted average is calculated as the sum of the product of the
+    statistic and the number of matches, divided by the sum of the number of
+    matches.
+    """
     return (n_matches * stat).sum() / n_matches.sum()
 
 
-def proccess_df_avg(df):
+def proccess_df_avg(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Process a DataFrame to calculate the average statistics per season.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to process. It should have a 'SEASON' column and various
+        statistic columns (e.g. 'POINTS', 'TWOS_IN', etc.).
+
+    Returns
+    -------
+    pandas.DataFrame
+        A new DataFrame with the average statistics per season.
+
+    Notes
+    -----
+    The function groups the input DataFrame by the 'SEASON' column and
+    calculates the weighted average of each statistic using the 'N_MATCHES'
+    column as the weight.
+    """
     dff = df.groupby('SEASON')\
         .apply(lambda x:
                pd.Series(
@@ -60,7 +101,28 @@ def proccess_df_avg(df):
     return dff
 
 
-def proccess_df_total(df):
+def proccess_df_total(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Process a DataFrame to calculate the total statistics per season.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        The DataFrame to process. It should have a 'SEASON' column and various
+        statistic columns (e.g. 'POINTS', 'TWOS_IN', etc.).
+
+    Returns
+    -------
+    pandas.DataFrame
+        A new DataFrame with the total statistics per season.
+
+    Notes
+    -----
+    The function groups the input DataFrame by the 'SEASON' column and
+    calculates the sum of each statistic. For percentage statistics (e.g.
+    'TWOS_PERC'), it calculates the weighted average using the 'N_MATCHES'
+    column as the weight.
+    """
     dff = df.groupby('SEASON')\
         .apply(lambda x:
                pd.Series(

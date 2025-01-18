@@ -1,6 +1,27 @@
 from utils.analysis import *
 from utils.scraper import *
 from utils.show_data import *
+from utils.empty import *
+from taipy import Gui
+
+
+def init(state: Gui) -> None:
+    """
+    Initializes the application with a default player.
+
+    Args:
+        state (Gui): The current state of the graphical user interface.
+
+    Returns:
+        None
+
+    Notes:
+        By default, the application is initialized with Marc Gasol's player ID
+        (360978).
+    """
+    # Marc Gasol id by default ------------------------------------------------
+    player_id = 360978
+    new_player(state, player_id)
 
 
 # Player Scraper default ------------------------------------------------------
@@ -33,17 +54,7 @@ personal_fouls_avg = None
 fouls_received_avg = None
 efficiency_avg = None
 
-stats_dict = {
-        "n_matches": 15,
-        "points_avg": 12,
-        'min_avg': 12,
-        "twos_in_avg": 1,
-        "twos_tried_avg": 5}
-
-
-player_scraper = PlayerScraper(stats_dict, season_scraping, league_scraping)
-players_scraped = player_scraper.querying()
-players_scraped = players_scraped
+players_scraped = players_scraped_init()
 scraper_instructions = ''
 # Lists used in Scraper AND Analysis ------------------------------------------
 leagues_list = ['LEB ORO', 'LEB PLATA', 'LIGA EBA']
@@ -63,41 +74,34 @@ players_list = []
 team_ids_dict = ''
 player_ids_dict = ''
 
-# Player Analysis by default = Marc Gasol -------------------------------------
-# Marc Gasol id
-player_id = 360978
-player_stats = PlayerStats(player_id)
-
+# Player Analysis -------------------------------------------------------------
 # Personal info + path
-player_stats.info()
-name = player_stats.player_name
-age = player_stats.age
-position = player_stats.position
-nationality = player_stats.nationality
+player_id = None
+name = None
+age = None
+position = None
+nationality = None
 
-player_path = player_stats.path()
+player_path = None
 
-last_season = player_stats.last_season
-last_league = player_stats.last_league
+last_season = None
+last_league = None
 
-player_image = player_stats.player_image()
-player_image_width = player_stats.player_image_width
-player_image_height = player_stats.player_image_height
+player_image = None
+player_image_width = None
+player_image_height = None
 
 
 # Shootings
-image_1, image_2, image_3 = player_stats.shootings_images()
+image_1, image_2, image_3 = None, None, None
 
 # Table stats
-stat_mode = 'AVERAGE'
-player_stats_table = player_stats.stats_avg_table()
+stat_mode = None
+player_stats_table = None
 
 # Chart
-list_of_stats = list(player_stats_table.columns)
-stats_columns = [x for x in list_of_stats if x not in
-                 ['MIN', 'SEASON', 'TEAM_NAME_EXTENDED',
-                  'STAGE_NAME_EXTENDED']]
+list_of_stats = None
+stats_columns = None
 # Stat to show by default
-stats_to_show = ['POINTS']
-figg = create_fig(player_stats_table, stats_to_show, stat_mode)
-
+stats_to_show = None
+figg = None
