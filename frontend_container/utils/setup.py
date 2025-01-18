@@ -2,10 +2,10 @@ from utils.analysis import *
 from utils.scraper import *
 from utils.show_data import *
 from utils.empty import *
-from taipy import Gui
+from taipy.gui import State
 
 
-def init(state: Gui) -> None:
+def init(state: State) -> None:
     """
     Initializes the application with a default player.
 

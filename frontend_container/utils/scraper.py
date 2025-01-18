@@ -1,11 +1,11 @@
 from utils.show_data import new_player
 from utils.analysis import PlayerScraper, SearchPlayer
 from utils.empty import *
-from taipy.gui import notify, Gui
+from taipy.gui import notify, State
 
 
 # Player Scraping
-def submit_stats(state: Gui) -> None:
+def submit_stats(state: State) -> None:
     """
     Submits player statistics to be matched with existing players.
 
@@ -104,7 +104,7 @@ def submit_stats(state: Gui) -> None:
                message='No players with those stats were found')
 
 
-def clear_button(state: Gui) -> None:
+def clear_button(state: State) -> None:
     """
     Resets all statistics in the given state to None.
 
@@ -146,7 +146,7 @@ def clear_button(state: Gui) -> None:
     state.efficiency_avg = None
 
 
-def scraper_triggered(state: Gui, var_name: str, payload: dict) -> None:
+def scraper_triggered(state: State, var_name: str, payload: dict) -> None:
     """
     Triggers the scraper functionality when a player is selected.
 
@@ -175,7 +175,7 @@ def scraper_triggered(state: Gui, var_name: str, payload: dict) -> None:
 
 
 # Player Analysis
-def league_function(state: Gui) -> None:
+def league_function(state: State) -> None:
     """
     Resets and initializes the state object for a new league analysis.
 
@@ -197,7 +197,7 @@ def league_function(state: Gui) -> None:
     state.player_analysis = None
 
 
-def season_function(state: Gui) -> None:
+def season_function(state: State) -> None:
     """
     Resets and updates the state with new team and player data based on the
     selected season.
@@ -225,7 +225,7 @@ def season_function(state: Gui) -> None:
     state.teams_list = teams_list
 
 
-def team_function(state: Gui) -> None:
+def team_function(state: State) -> None:
     """
     Updates the player analysis and list based on the selected team.
 
@@ -250,7 +250,7 @@ def team_function(state: Gui) -> None:
     state.player_ids_dict = player_ids_dict
 
 
-def player_function(state: Gui) -> None:
+def player_function(state: State) -> None:
     """
     Initiates player analysis by retrieving the player ID and notifying the
     user.

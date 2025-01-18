@@ -1,5 +1,5 @@
 import plotly.graph_objects
-from taipy.gui import notify, Gui
+from taipy.gui import notify, State
 import plotly.express as px
 import plotly
 from utils.analysis import *
@@ -7,7 +7,7 @@ from utils.processer import *
 from utils.empty import *
 
 
-def new_player(state: Gui, player_id: int) -> None:
+def new_player(state: State, player_id: int) -> None:
     """
     Initializes a new player with the given ID and updates the GUI state.
 
@@ -79,7 +79,7 @@ def new_player(state: Gui, player_id: int) -> None:
         state.figg = chart_fail()
 
 
-def on_mode(state: Gui) -> None:
+def on_mode(state: State) -> None:
     """
     Updates the player statistics table based on the current mode.
 
@@ -110,7 +110,7 @@ def on_mode(state: Gui) -> None:
     on_stats_selector(state)
 
 
-def on_stats_selector(state: Gui) -> None:
+def on_stats_selector(state: State) -> None:
     """
     Handles the selection of statistics to display.
 
@@ -144,7 +144,7 @@ def on_stats_selector(state: Gui) -> None:
         state.figg = chart_fail()
 
 
-def create_fig(state: Gui, df: pd.DataFrame, stats_to_show: list,
+def create_fig(state: State, df: pd.DataFrame, stats_to_show: list,
                stat_mode: str) -> plotly.graph_objs.Figure:
     """
     Creates a figure based on the provided data and statistics to show.

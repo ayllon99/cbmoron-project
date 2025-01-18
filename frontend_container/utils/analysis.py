@@ -7,7 +7,7 @@ import io
 from utils.shootings import generate_image
 from utils.variables import config
 from utils.empty import *
-from taipy.gui import notify, Gui
+from taipy.gui import notify, State
 
 
 class PlayerScraper:
@@ -799,7 +799,7 @@ class PlayerStats:
                       'nationality']
         return df
 
-    def info(self, state: Gui) -> None:
+    def info(self, state: State) -> None:
         """
         Retrieves and updates the player's personal information.
 
@@ -926,7 +926,7 @@ class PlayerStats:
         df['efficiency'] = df['efficiency'].apply(lambda x: round(float(x), 2))
         return df
 
-    def path(self, state: Gui) -> pd.DataFrame:
+    def path(self, state: State) -> pd.DataFrame:
         """
         Retrieves the path data for a player and returns it as a pandas
         DataFrame.
